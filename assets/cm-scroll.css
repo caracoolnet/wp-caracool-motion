@@ -1,0 +1,162 @@
+/**
+ * Caracool Motion — Scroll
+ * Solo estructura: nada de colores de marca ni tipografías. Lo que necesita
+ * color lo toma de las variables globales del Kit de Elementor, así que el
+ * mismo archivo sirve para cualquier cliente sin tocar una línea.
+ */
+
+/* --- cortina ------------------------------------------------------------ */
+.cm-recorta { position: relative; overflow: hidden; }
+
+.cm-capa {
+	position: absolute;
+	inset: -1px;
+	z-index: 6;
+	pointer-events: none;
+	will-change: transform;
+}
+
+/* --- la foto crece ------------------------------------------------------ */
+.cm-fijo {
+	position: sticky;
+	top: 0;
+	height: 100vh;
+	overflow: hidden;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.cm-marco {
+	position: relative;
+	z-index: 1;
+	overflow: hidden;
+	will-change: width, height;
+	flex: none;
+}
+
+.cm-marco img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+.cm-velo {
+	position: absolute;
+	inset: 0;
+	z-index: 2;
+	background: var(--cm-velo-color, currentColor);
+	opacity: 0;
+	pointer-events: none;
+}
+
+.cm-rotulo {
+	position: absolute;
+	z-index: 3;
+	inset: auto;
+	max-width: 42rem;
+	padding: 0 24px;
+	text-align: center;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.cm-progreso {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 8;
+	height: var(--cm-barra-grosor, 2px);
+	background: rgba(127, 127, 127, .22);
+}
+
+.cm-progreso > i {
+	display: block;
+	height: 100%;
+	width: 0;
+	background: var(--cm-barra-color, var(--e-global-color-accent, currentColor));
+}
+
+/* --- navegación por puntos ---------------------------------------------- */
+.cm-puntos {
+	position: fixed;
+	right: 24px;
+	top: 50%;
+	transform: translateY(-50%);
+	z-index: 80;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 12px;
+}
+
+.cm-puntos button {
+	width: 9px;
+	height: 9px;
+	padding: 0;
+	border-radius: 50%;
+	cursor: pointer;
+	background: transparent;
+	border: 1px solid var(--cm-puntos-color, var(--e-global-color-accent, currentColor));
+	opacity: .5;
+	transition: background-color .3s, border-color .3s, opacity .3s, transform .3s;
+}
+
+.cm-puntos button.cm-activo {
+	background: var(--cm-puntos-color, var(--e-global-color-accent, currentColor));
+	border-color: var(--cm-puntos-color, var(--e-global-color-accent, currentColor));
+	opacity: 1;
+	transform: scale(1.35);
+}
+
+.cm-puntos .cm-flecha {
+	width: auto;
+	height: auto;
+	padding: 6px;
+	border: 0;
+	border-radius: 0;
+	background: none;
+	line-height: 0;
+	opacity: .45;
+	color: var(--cm-puntos-color, var(--e-global-color-accent, currentColor));
+}
+
+.cm-puntos .cm-flecha:hover { opacity: 1; }
+
+.cm-punto-env { position: relative; display: flex; align-items: center; }
+
+.cm-etiqueta {
+	position: absolute;
+	right: 20px;
+	white-space: nowrap;
+	font-size: 10px;
+	letter-spacing: .18em;
+	text-transform: uppercase;
+	color: var(--e-global-color-secondary, currentColor);
+	opacity: 0;
+	transform: translateX(6px);
+	transition: opacity .25s, transform .25s;
+	pointer-events: none;
+}
+
+.cm-punto-env:hover .cm-etiqueta { opacity: 1; transform: translateX(0); }
+
+.cm-puntos button:focus-visible {
+	outline: 2px solid var(--e-global-color-secondary, currentColor);
+	outline-offset: 4px;
+}
+
+/* --- móvil y accesibilidad ---------------------------------------------- */
+@media (max-width: 860px) {
+	.cm-puntos { display: none; }
+	.cm-fijo { height: 100svh; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.cm-capa { display: none; }
+	.cm-velo { display: none; }
+	.cm-rotulo { position: static; opacity: 1; }
+	.cm-fijo { position: static; height: auto; }
+}

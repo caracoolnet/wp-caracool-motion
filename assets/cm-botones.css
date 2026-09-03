@@ -1,0 +1,68 @@
+/* Caracool Motion — Botones
+   ───────────────────────────────────────────────────────────────────────
+   Solo estructura. Ni un color de marca: los dos colores del efecto los
+   calcula el JavaScript leyendo el propio botón y los deja en
+   --cm-relleno y --cm-tinta. Así el efecto se ajusta solo a lo que cada
+   cliente tenga puesto en el Kit de Elementor.                          */
+
+.cm-boton {
+	position: relative;
+	isolation: isolate;
+}
+
+/* La capa que barre. Lleva el fondo Y una copia del contenido del botón,
+   recortados los dos con el mismo clip-path: por eso cada letra cambia de
+   color justo cuando el borde la cruza, sin medias palabras ilegibles.
+
+   Sale --cm-sangrado por fuera del botón (el JS lo pone: el grosor del
+   borde, y 1px como mínimo). Si se quedara justo en el canto, el
+   antialiasing del botón y el de la capa se mezclan y queda un halo del
+   color de reposo alrededor. Con la capa un píxel más grande, el único
+   canto que se ve es el suyo. Por eso el botón NO lleva overflow:hidden. */
+.cm-boton__capa {
+	position: absolute;
+	inset: calc(-1 * var(--cm-sangrado, 1px));
+	box-sizing: border-box;
+	padding: inherit;
+	display: flex;
+	align-items: center;
+	justify-content: inherit;
+	gap: inherit;
+
+	background: var(--cm-relleno);
+	color: var(--cm-tinta);
+	border-radius: inherit;
+
+	font: inherit;
+	letter-spacing: inherit;
+	text-transform: inherit;
+	text-align: inherit;
+	white-space: inherit;
+
+	clip-path: inset(0 var(--cm-der, 100%) 0 var(--cm-izq, 0%));
+	transition: clip-path var(--cm-vel, .5s) cubic-bezier(.22, 1, .36, 1);
+
+	pointer-events: none;
+}
+
+/* Iconos y spans interiores heredan el color de la capa, no el suyo. */
+.cm-boton__capa * {
+	color: inherit;
+	fill: inherit;
+	border-color: inherit;
+}
+
+/* El contenido clonado ocupa lo mismo que el original. */
+.cm-boton__capa > .elementor-button-content-wrapper {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	gap: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.cm-boton__capa {
+		transition: none;
+	}
+}

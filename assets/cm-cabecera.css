@@ -1,0 +1,53 @@
+/* Caracool Motion — Cabecera
+   ───────────────────────────────────────────────────────────────────────
+   Solo estructura y estados. El color de fondo llega en --cm-cabecera-fondo,
+   que el JS apunta a un color global del Kit elegido en el panel.         */
+
+.cm-cabecera {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	z-index: 90;
+	transition:
+		transform .55s cubic-bezier(.22, 1, .36, 1),
+		background-color .35s ease,
+		box-shadow .35s ease;
+	will-change: transform;
+}
+
+/* Barra de administración de WordPress: la cabecera se coloca debajo. */
+.admin-bar .cm-cabecera {
+	top: 32px;
+}
+@media (max-width: 782px) {
+	.admin-bar .cm-cabecera {
+		top: 46px;
+	}
+}
+
+/* Escondida: sube fuera de la pantalla. */
+.cm-cabecera--oculta {
+	transform: translateY(-100%);
+}
+
+/* Sólida: fondo del color global elegido. */
+.cm-cabecera--solida {
+	background-color: var(--cm-cabecera-fondo);
+}
+
+/* Hilo de separación, opcional, en el color del texto muy atenuado. */
+.cm-cabecera--solida.cm-cabecera--linea {
+	box-shadow: 0 1px 0 0 color-mix(in srgb, currentColor 14%, transparent);
+}
+
+/* Con el menú desplegable abierto no se esconde nunca. */
+.cm-cabecera--menu-abierto {
+	transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.cm-cabecera {
+		transition: none;
+	}
+}
