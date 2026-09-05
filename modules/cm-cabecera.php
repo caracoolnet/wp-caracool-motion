@@ -109,6 +109,7 @@ class Caracool_Motion_Cabecera {
 					'umbral' => (int) $c['umbral'],
 					'fondo'  => '--e-global-color-' . $c['fondo'],
 					'sombra' => ( 'si' === $c['sombra'] ),
+					'linea'  => '--e-global-color-' . $c['linea'],
 				)
 			) . ';',
 			'before'
@@ -139,11 +140,17 @@ class Caracool_Motion_Cabecera {
 			$fondo = 'primary';
 		}
 
+		$linea = isset( $g['linea'] ) ? sanitize_key( $g['linea'] ) : 'text';
+		if ( '' === $linea ) {
+			$linea = 'text';
+		}
+
 		return array(
 			'activo' => ( isset( $g['activo'] ) && 'si' === $g['activo'] ) ? 'si' : 'no',
 			'umbral' => isset( $g['umbral'] ) ? self::acotar( $g['umbral'], 40, 800, 120 ) : 120,
 			'fondo'  => $fondo,
 			'sombra' => ( isset( $g['sombra'] ) && 'si' === $g['sombra'] ) ? 'si' : 'no',
+			'linea'  => $linea,
 		);
 	}
 
@@ -207,7 +214,19 @@ class Caracool_Motion_Cabecera {
 					<label for="cm_cabecera_sombra">Línea de separación</label>
 					<div>
 						<label class="cm-sw"><input type="checkbox" name="cm_cabecera[sombra]" id="cm_cabecera_sombra" value="si" <?php checked( 'si', $c['sombra'] ); ?>><span></span></label>
-						<span class="cm-hint">Un hilo muy suave bajo la cabecera cuando lleva fondo sólido, para separarla del contenido en páginas claras.</span>
+						<span class="cm-hint">Un hilo de 1 px bajo la cabecera mientras está a la vista con fondo sólido. Escondida, no se ve.</span>
+					</div>
+				</div>
+
+				<div class="cm-campo">
+					<label for="cm_cabecera_linea">Color de la línea</label>
+					<div>
+						<select name="cm_cabecera[linea]" id="cm_cabecera_linea">
+							<?php foreach ( $colores as $id => $etiqueta ) : ?>
+								<option value="<?php echo esc_attr( $id ); ?>" <?php selected( $id, $c['linea'] ); ?>><?php echo esc_html( $etiqueta ); ?></option>
+							<?php endforeach; ?>
+						</select>
+						<span class="cm-hint">Un color global del Kit. Si el Kit tiene un color para líneas o bordes, es el que toca.</span>
 					</div>
 				</div>
 			</div>
@@ -229,6 +248,10 @@ class Caracool_Motion_Cabecera {
 		if ( ! isset( $colores[ $fondo ] ) ) {
 			$fondo = 'primary';
 		}
+		$linea = isset( $post['linea'] ) ? sanitize_key( $post['linea'] ) : 'text';
+		if ( ! isset( $colores[ $linea ] ) ) {
+			$linea = 'text';
+		}
 
 		update_option(
 			self::OPTION_KEY,
@@ -237,6 +260,7 @@ class Caracool_Motion_Cabecera {
 				'umbral' => self::acotar( isset( $post['umbral'] ) ? $post['umbral'] : null, 40, 800, 120 ),
 				'fondo'  => $fondo,
 				'sombra' => ( isset( $post['sombra'] ) && 'si' === $post['sombra'] ) ? 'si' : 'no',
+				'linea'  => $linea,
 			)
 		);
 	}

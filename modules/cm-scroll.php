@@ -48,6 +48,7 @@ class Caracool_Motion_Scroll {
 		add_action( 'elementor/element/container/section_border/after_section_end', array( $this, 'controles_contenedor' ), 10, 2 );
 		add_action( 'elementor/frontend/before_render', array( $this, 'inyectar_atributos' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'registrar_assets' ) );
+		add_action( 'wp_head', array( $this, 'imprimir_guarda' ), 1 );
 		add_action( 'wp_footer', array( $this, 'imprimir_assets' ), 5 );
 
 		add_action( 'caracool_motion_settings_panels', array( $this, 'panel' ) );
@@ -63,17 +64,17 @@ class Caracool_Motion_Scroll {
 				'cortina'  => array(
 					'etiqueta' => 'Cortina lateral',
 					'ayuda'    => 'La sección llega tapada por una capa del color de la sección anterior y se destapa al deslizarse. Con este efecto el contenido no se anima: la cortina ya es la animación.',
-					'opciones' => array( 'direccion', 'velocidad', 'color' ),
+					'opciones' => array( 'direccion', 'velocidad', 'color', 'contenido' ),
 				),
 				'crece'    => array(
 					'etiqueta' => 'La foto crece',
-					'ayuda'    => 'La sección se queda fija mientras la primera imagen que contenga crece hasta ocupar la pantalla. El resto del contenido aparece encima al final, y con él, si se quiere, un velo entre la foto y el texto para que se lea. Da al contenedor una altura mínima de 240vh o más.',
+					'ayuda'    => 'La sección se queda fija mientras la primera imagen que contenga crece hasta ocupar la pantalla. El resto del contenido aparece encima al final, y con él, si se quiere, un velo entre la foto y el texto para que se lea. Da al contenedor una altura mínima de 240vh o más. Estructura: dentro, un contenedor con la imagen y UN contenedor hermano con el contenido; ese contenedor pasa a ocupar toda la pantalla sobre la foto y su padding, justificación y alineación mandan (como en cualquier sección). Si hay widgets sueltos en vez de un contenedor, salen centrados.',
 					'opciones' => array( 'velocidad', 'velo', 'velo_opacidad', 'barra', 'barra_color', 'barra_grosor' ),
 				),
 				'entrada'  => array(
 					'etiqueta' => 'Entrada escalonada',
-					'ayuda'    => 'Los elementos del contenedor entran de abajo arriba, uno detrás de otro, la primera vez que la sección aparece.',
-					'opciones' => array( 'velocidad' ),
+					'ayuda'    => 'Las piezas del contenedor (cada texto, cada botón y, en una lista de precios, cada línea) suben y aparecen una detrás de otra, en orden de lectura. Se elige si la coreografía se lanza entera al llegar al bloque o si cada pieza espera a que llegues a ella.',
+					'opciones' => array( 'disparo', 'velocidad' ),
 				),
 				'parallax' => array(
 					'etiqueta' => 'Parallax',
@@ -104,6 +105,23 @@ class Caracool_Motion_Scroll {
 					'izquierda' => 'Hacia la izquierda',
 				),
 				'defecto'  => 'derecha',
+			),
+			'contenido' => array(
+				'etiqueta' => 'Contenido',
+				'valores'  => array(
+					'destapa' => 'Se destapa con la cortina',
+					'despues' => 'Entra después, por encima de la cortina',
+				),
+				'defecto'  => 'destapa',
+			),
+			'disparo'   => array(
+				'etiqueta' => 'Cuándo entra',
+				'valores'  => array(
+					'bloque' => 'Todo al llegar al bloque',
+					'piezas' => 'Cada pieza al llegar a ella',
+				),
+				'defecto'  => 'bloque',
+				'ayuda'    => 'Al llegar al bloque: la coreografía entera se lanza cuando la sección aparece, así que el bloque se ve completo aunque sigas bajando. Cada pieza: la entrada va atada al scroll y cada elemento espera a que llegues a él.',
 			),
 			'velocidad' => array(
 				'etiqueta' => 'Velocidad',
@@ -149,14 +167,9 @@ class Caracool_Motion_Scroll {
 			),
 			'color'     => array(
 				'etiqueta' => 'Color de la cortina',
-				'valores'  => array(
-					'auto'      => 'Automático (el de la sección anterior)',
-					'primary'   => 'Global · Principal',
-					'secondary' => 'Global · Secundario',
-					'text'      => 'Global · Texto',
-					'accent'    => 'Global · Énfasis',
-				),
-				'defecto'  => 'auto',
+				'tipo'     => 'color',
+				'variable' => '--cm-cortina-color',
+				'ayuda'    => 'Vacío: el color de fondo de la sección anterior. Admite un color global del Kit o uno cualquiera.',
 			),
 		);
 	}
@@ -257,11 +270,12 @@ class Caracool_Motion_Scroll {
 			$element->add_control(
 				'cm_' . $clave,
 				array(
-					'label'     => $op['etiqueta'],
-					'type'      => \Elementor\Controls_Manager::SELECT,
-					'options'   => $op['valores'],
-					'default'   => $op['defecto'],
-					'condition' => array( 'cm_efecto' => $condicion ),
+					'label'       => $op['etiqueta'],
+					'type'        => \Elementor\Controls_Manager::SELECT,
+					'options'     => $op['valores'],
+					'default'     => $op['defecto'],
+					'description' => isset( $op['ayuda'] ) ? $op['ayuda'] : '',
+					'condition'   => array( 'cm_efecto' => $condicion ),
 				)
 			);
 		}
@@ -351,6 +365,31 @@ class Caracool_Motion_Scroll {
 		wp_register_script( 'cm-scrolltrigger', $base . 'ScrollTrigger.min.js', array( 'cm-gsap' ), '3.12.5', true );
 		wp_register_script( 'cm-lenis', $base . 'lenis.min.js', array(), '1.1.20', true );
 		wp_register_script( 'cm-scroll', $base . 'cm-scroll.js', array( 'cm-gsap', 'cm-scrolltrigger', 'cm-lenis' ), caracool_motion_ver( 'cm-scroll.js' ), true );
+	}
+
+	/**
+	 * Tapa las piezas de los bloques con entrada antes del primer pintado.
+	 *
+	 * El JavaScript del módulo va al final del body, así que sin esto el
+	 * navegador pinta el contenido, el efecto lo esconde y luego lo hace
+	 * entrar: se ve un parpadeo, sobre todo en el primer bloque de la página.
+	 * Se tapa solo lo que se va a animar, no el contenedor, para que la foto
+	 * de fondo del hero se vea desde el primer momento.
+	 *
+	 * Va sin condición de página: son 200 bytes y en el `wp_head` todavía no
+	 * se ha renderizado ningún contenedor, así que aún no se sabe si esta
+	 * página lleva efectos. Sin bloques con entrada, la regla no pinta nada.
+	 * La quita el JS en cuanto ha colocado cada pieza; si no llegara a
+	 * arrancar, se quita sola a los dos segundos.
+	 */
+	public function imprimir_guarda() {
+		if ( self::editor_elementor() ) {
+			return;
+		}
+		?>
+<style id="cm-guarda">html.cm-entrando [data-cm-efecto="entrada"] .elementor-widget{visibility:hidden}</style>
+<script id="cm-guarda-js">(function(h){if(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches){return;}h.className+=" cm-entrando";setTimeout(function(){h.classList.remove("cm-entrando");},2000);}(document.documentElement));</script>
+		<?php
 	}
 
 	public function imprimir_assets() {
