@@ -2,7 +2,7 @@
 
 Movimiento para webs hechas con Elementor: scroll con inercia y transiciones de sección que se eligen **desde el propio panel de Elementor**, sin escribir código, sin CSS suelto en los bloques y sin depender de servicios externos.
 
-**Versión actual:** 0.4.0 · **Requiere:** WordPress 6.0+, Elementor 3.16+ (contenedores flexbox)
+**Versión actual:** 0.5.0 · **Requiere:** WordPress 6.0+, Elementor 3.16+ (contenedores flexbox)
 
 ---
 
@@ -33,9 +33,9 @@ Los botones van por otro camino: se encienden una vez para toda la web desde el 
 
 | Efecto | Qué hace | Opciones |
 |---|---|---|
-| **Cortina lateral** | La sección llega tapada por una capa del color de la sección anterior y se destapa al deslizarse. | Dirección, velocidad, color |
-| **La foto crece** | La sección se queda fija mientras su primera imagen crece hasta ocupar la pantalla. El resto del contenido aparece encima al final, con una línea de progreso abajo. Opcionalmente, un **velo** entre la foto y el texto que entra con el texto. El velo y la línea usan el **selector de color nativo de Elementor** (globales del Kit o cualquier color); la línea se puede apagar y se le da grosor. | Velocidad, color del velo, opacidad del velo, línea sí/no, color de la línea, grosor |
-| **Entrada escalonada** | Los elementos del contenedor entran de abajo arriba, uno detrás de otro. | Velocidad |
+| **Cortina lateral** | La sección llega tapada por una capa del color de la sección anterior y se destapa al deslizarse. El color se puede fijar con el selector de color nativo de Elementor (globales del Kit o cualquiera); vacío, toma el fondo de la sección anterior. Con **Contenido: entra después**, el contenido va por encima de la cortina y aparece cuando ya ha pasado: sobre una foto de fondo (con la superposición de Elementor para que se lea) es la «máscara» clásica. La foto de fondo se precarga para que esté antes de que la cortina se mueva. | Dirección, velocidad, color, contenido |
+| **La foto crece** | La sección se queda fija mientras su primera imagen crece hasta ocupar la pantalla. El resto del contenido aparece encima al final, con una línea de progreso abajo. Si ese contenido va en un contenedor hermano de la imagen, el contenedor pasa a ocupar la pantalla sobre la foto y su padding, justificación y alineación mandan, como en cualquier sección de Elementor. Opcionalmente, un **velo** entre la foto y el texto que entra con el texto. El velo y la línea usan el **selector de color nativo de Elementor** (globales del Kit o cualquier color); la línea se puede apagar y se le da grosor. | Velocidad, color del velo, opacidad del velo, línea sí/no, color de la línea, grosor |
+| **Entrada escalonada** | Las piezas del contenedor (cada texto, cada botón y, en una lista de precios, cada línea) suben y aparecen una detrás de otra, en orden de lectura. Da igual que el bloque sea más alto que la pantalla. | Cuándo entra, Velocidad |
 | **Parallax** | El contenido se desplaza más despacio que la página. | Velocidad |
 | **La marca se planta y el disco crece** | Para un logotipo SVG con una forma grande y una marca fuera de ella: la marca entra girando y se planta, la forma grande crece desde su centro. La coreografía de la intro, para un logotipo enorme de fondo. | Velocidad |
 | **Gira hasta plantarse** | El contenedor entra girando y creciendo un poco hasta quedarse quieto. Para una marca o un icono grande de fondo. | Velocidad |
@@ -98,6 +98,14 @@ La sábana y el logotipo se imprimen **con el HTML**, en `wp_body_open`, con su 
 ### Reglas de uso aprendidas en producción
 
 - **Con cortina, el contenido no se anima.** La cortina ya es la animación. Si además entra el texto, se ve colocado, luego tapado y luego moviéndose otra vez. El plugin no aplica entradas dentro de un contenedor con cortina.
+- **La entrada va por piezas, no por bloques.** Un umbral fijo sobre el contenedor (que ocupe el 35 % de la pantalla) parece razonable hasta que el bloque mide tres pantallas: entonces no llega nunca a ese porcentaje y el contenido se queda invisible. Pasó en la carta en móvil.
+- **Atar la entrada al scroll no siempre luce.** Con listas largas, unos elementos entran y otros se quedan a medias mientras se baja. Por eso de fábrica la coreografía se lanza entera al llegar al bloque, y lo de pieza a pieza es una opción.
+- **En iOS, la ventana no mide lo que mide el panel.** `window.innerHeight` sube y baja con la barra de Safari; `100svh` no. Lo que tiene que encajar dentro de una caja se mide contra esa caja (`clientWidth` / `clientHeight`), nunca contra la ventana.
+- **Abajo del todo, en un móvil, no hay sitio.** La barra del navegador aparece y desaparece justo ahí. Lo que tenga que verse siempre —una línea de avance— va a un lateral. Y si algo puede ser ancho u alto según el dispositivo, se anima un número y que el CSS decida: así girar el teléfono no obliga a recargar.
+- **Lo que va a entrar no puede pintarse antes.** Con el JS al final del `body`, el navegador pinta, el efecto esconde y luego anima: parpadeo. Lo que se va a animar se tapa desde la cabecera, antes del primer pintado, y se destapa cuando el efecto ya lo ha colocado. Se tapan las piezas, nunca el contenedor: su foto de fondo tiene que verse desde el primer momento.
+- **El primer bloque necesita pista.** Animar mientras el navegador todavía descarga y decodifica sale a tirones. Lo que ya se ve al cargar espera a que la página termine; lo que llega bajando, no.
+- **Una curva lenta al principio no destapa nada.** Avisar «la sábana empieza a irse» no es lo mismo que «ya se ve»: con `expo.inOut`, a mitad de tiempo la sábana lleva un 3 % de recorrido. Los avisos entre animaciones se dan por el **recorrido**, no por el reloj.
+- **Una línea de disparo por sí sola no basta.** Si la entrada solo mira a que el elemento suba por encima de cierta altura de la pantalla, lo que está pegado al final del documento no entra nunca: el scroll se acaba antes. Le pasó a la barra baja del pie. Cualquier disparo por scroll necesita su red: verse entero también cuenta como haber llegado.
 - **La cortina llega puesta, no entra.** Si apareciera desde fuera cuando la sección ya se ve a medias, taparía algo que el visitante ya había visto.
 - **Una cortina del mismo color que su propia sección no se ve.** Por eso el color por defecto es el de la sección anterior: así la transición se percibe continua.
 - **"La foto crece" solo una vez por página.** Es el momento fuerte; repetido, se convierte en un truco.
