@@ -19,6 +19,7 @@
 	var UMBRAL = Number(CONF.umbral) || 120;
 	var FONDO = CONF.fondo || '--e-global-color-primary';
 	var SOMBRA = !!CONF.sombra;
+	var LINEA = CONF.linea || '--e-global-color-text';
 
 	// Cuánto hay que moverse en una dirección para que cuente. Evita que la
 	// cabecera parpadee con el temblor de la rueda o del trackpad.
@@ -37,6 +38,7 @@
 		cab.classList.add('cm-cabecera');
 		if (SOMBRA) { cab.classList.add('cm-cabecera--linea'); }
 		cab.style.setProperty('--cm-cabecera-fondo', 'var(' + FONDO + ')');
+		cab.style.setProperty('--cm-cabecera-linea', 'var(' + LINEA + ')');
 
 		var ultimoY = window.scrollY || 0;
 		var ancla = ultimoY;      // punto desde el que medimos la histéresis

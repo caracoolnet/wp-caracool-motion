@@ -171,16 +171,43 @@
 		tl.add(fn(p));
 		tl.to({}, { duration: 0.45 });
 
-		// Aviso de que la sábana empieza a irse: las entradas del contenido
+		// Aviso de que la sábana se está yendo: las entradas del contenido
 		// (módulo Scroll) arrancan aquí, a la vista, no cuando ya se ha ido.
-		var avisarSale = function () { try { document.dispatchEvent(new CustomEvent('cm:intro:sale')); } catch (e) {} };
+		//
+		// Ojo con el momento. La salida va con «expo.inOut», que casi no se
+		// mueve al principio: a mitad de tiempo lleva recorrido un 3 %. Avisar
+		// al empezar el tramo dejaba la coreografía del hero corriendo a
+		// oscuras, y cuando por fin se destapaba el título ya estaba puesto y
+		// solo quedaban entrando las últimas piezas, sueltas y lentas. Así que
+		// se avisa por el recorrido de la propia sábana, no por el reloj: en
+		// cuanto ha hecho un cuarto del camino. Vale igual para las dos
+		// salidas y para cualquier curva que se ponga después.
+		var dicho = false;
+		var avisarSale = function () {
+			if (dicho) { return; }
+			dicho = true;
+			try { document.dispatchEvent(new CustomEvent('cm:intro:sale')); } catch (e) {}
+		};
+		var DESTAPE = 0.25;
+		// GSAP pone `this` en el propio tween dentro de los callbacks, y
+		// `ratio` es el recorrido ya pasado por la curva. Si algún día dejara
+		// de ser así, el aviso sale al primer fotograma: el comportamiento de
+		// antes, nunca menos.
+		var vigilarDestape = function () {
+			var recorrido = this && typeof this.ratio === 'number' ? this.ratio : 1;
+			if (recorrido >= DESTAPE) { avisarSale(); }
+		};
+
 		if (SALIDA === 'recorte') {
 			tl.to(svg, { opacity: 0, duration: 0.3, ease: 'power1.in' });
-			tl.call(avisarSale, null, '-=0.05');
-			tl.fromTo(capa, { clipPath: 'inset(0 0 0% 0)' }, { clipPath: 'inset(0 0 100% 0)', duration: 0.95, ease: 'expo.inOut' }, '-=0.05');
+			tl.fromTo(
+				capa,
+				{ clipPath: 'inset(0 0 0% 0)' },
+				{ clipPath: 'inset(0 0 100% 0)', duration: 0.95, ease: 'expo.inOut', onUpdate: vigilarDestape, onComplete: avisarSale },
+				'-=0.1'
+			);
 		} else {
-			tl.call(avisarSale);
-			tl.to(capa, { yPercent: -100, duration: 1.0, ease: 'expo.inOut' });
+			tl.to(capa, { yPercent: -100, duration: 1.0, ease: 'expo.inOut', onUpdate: vigilarDestape, onComplete: avisarSale });
 		}
 		tl.timeScale(100 / TEMPO);
 

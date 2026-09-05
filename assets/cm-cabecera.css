@@ -26,9 +26,10 @@
 	}
 }
 
-/* Escondida: sube fuera de la pantalla. */
+/* Escondida: sube fuera de la pantalla, con margen para que la línea de
+   separación no asome por el borde de arriba. */
 .cm-cabecera--oculta {
-	transform: translateY(-100%);
+	transform: translateY(calc(-100% - 2px));
 }
 
 /* Sólida: fondo del color global elegido. */
@@ -36,9 +37,13 @@
 	background-color: var(--cm-cabecera-fondo);
 }
 
-/* Hilo de separación, opcional, en el color del texto muy atenuado. */
+/* Hilo de separación, opcional: 1 px del color global elegido en el panel,
+   solo mientras la cabecera está a la vista con fondo sólido. */
 .cm-cabecera--solida.cm-cabecera--linea {
-	box-shadow: 0 1px 0 0 color-mix(in srgb, currentColor 14%, transparent);
+	box-shadow: 0 1px 0 0 var(--cm-cabecera-linea, currentColor);
+}
+.cm-cabecera--oculta.cm-cabecera--linea {
+	box-shadow: none;
 }
 
 /* Con el menú desplegable abierto no se esconde nunca. */

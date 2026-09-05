@@ -29,7 +29,16 @@
 		}
 	};
 
-	if (reducido || typeof window.gsap === 'undefined') { return; }
+	/* La cabecera imprime una regla que deja las piezas de los bloques con
+	   entrada en «visibility:hidden» antes del primer pintado, para que no se
+	   vean puestas, quitadas y puestas otra vez. Aquí se retira en cuanto los
+	   efectos han dejado cada pieza donde toca. Si el plugin no llega a
+	   arrancar, la propia cabecera la retira sola a los dos segundos. */
+	function destapar() {
+		document.documentElement.classList.remove('cm-entrando');
+	}
+
+	if (reducido || typeof window.gsap === 'undefined') { destapar(); return; }
 	gsap.registerPlugin(ScrollTrigger);
 
 	// ── Utilidades compartidas que reciben todos los efectos ────────────
@@ -50,6 +59,54 @@
 		return getComputedStyle(document.body).backgroundColor;
 	}
 
+	/* Color que Elementor ha escrito en el contenedor como variable CSS desde
+	   el selector de color nativo. Vacío si no hay nada. Si lo que hay es el
+	   nombre de un color global sin más (valores guardados con versiones
+	   anteriores, cuando esto era un desplegable), se resuelve contra el Kit. */
+	function colorDeVariable(el, nombre) {
+		var v = (getComputedStyle(el).getPropertyValue(nombre) || '').trim();
+		if (!v || v === 'auto' || v === 'ninguno') { return ''; }
+		if (/^[a-z0-9_-]+$/i.test(v) && !/^(transparent|currentcolor)$/i.test(v)) {
+			var g = colorGlobal(v);
+			return g || '';
+		}
+		return v;
+	}
+
+	/* Elementor carga perezosamente las imágenes de fondo de los contenedores
+	   a partir del tercero (background-image: none hasta que el contenedor se
+	   acerca a la pantalla). En una sección con efecto la foto tiene que estar
+	   antes de que se mueva nada: se le quita la espera y se precarga. */
+	function fondoListo(el) {
+		el.classList.add('e-no-lazyload');
+		var urls = {};
+		var apunta = function (texto) {
+			var re = /url\((['"]?)(.*?)\1\)/g, m;
+			while ((m = re.exec(texto || ''))) { if (m[2] && m[2].indexOf('data:') !== 0) { urls[m[2]] = 1; } }
+		};
+		// Lo que ya está pintado…
+		var nodos = [el].concat(Array.prototype.slice.call(el.querySelectorAll('.e-con, .elementor-widget-container, .elementor-motion-effects-layer')));
+		nodos.forEach(function (n) { apunta(getComputedStyle(n).backgroundImage); });
+		// …y lo que Elementor tiene en el CSS de la página para este contenedor
+		// aunque todavía no lo haya aplicado (efectos de movimiento del fondo,
+		// que crean su capa más tarde).
+		var id = el.getAttribute('data-id');
+		if (id) {
+			Array.prototype.forEach.call(document.styleSheets, function (hoja) {
+				var reglas;
+				try { reglas = hoja.cssRules; } catch (e) { return; }
+				if (!reglas) { return; }
+				Array.prototype.forEach.call(reglas, function (r) {
+					if (r.selectorText && r.selectorText.indexOf('elementor-element-' + id) !== -1 && r.style) {
+						apunta(r.style.backgroundImage);
+					}
+				});
+			});
+		}
+		Object.keys(urls).forEach(function (u) { var img = new Image(); img.src = u; });
+		Array.prototype.forEach.call(el.querySelectorAll('img[loading="lazy"]'), function (img) { img.loading = 'eager'; });
+	}
+
 	function colorGlobal(nombre) {
 		var v = getComputedStyle(document.documentElement).getPropertyValue('--e-global-color-' + nombre);
 		if (!v) {
@@ -57,6 +114,139 @@
 			v = getComputedStyle(kit).getPropertyValue('--e-global-color-' + nombre);
 		}
 		return (v || '').trim();
+	}
+
+	/** Las piezas de verdad de un contenedor: los widgets que hay dentro y, en
+	 *  una lista de precios o de iconos, cada línea suelta. Nunca los
+	 *  contenedores: animando la columna entera el bloque entra de golpe, que
+	 *  es justo lo que no queremos. El orden es el del documento, o sea el de
+	 *  lectura: primero la columna de texto, después la lista. */
+	function piezasDe(raiz) {
+		var LISTAS = 'ul.elementor-price-list, ul.elementor-icon-list-items';
+		var piezas = [];
+		Array.prototype.forEach.call(raiz.querySelectorAll('.elementor-widget'), function (w) {
+			// Un widget dentro de otro widget no cuenta dos veces.
+			if (w.parentElement && w.parentElement.closest('.elementor-widget')) { return; }
+			var lista = w.querySelector(LISTAS);
+			var lineas = lista ? Array.prototype.slice.call(lista.children) : [];
+			piezas = piezas.concat(lineas.length > 1 ? lineas : [w]);
+		});
+		if (piezas.length) { return piezas; }
+		// Un contenedor sin widgets (solo cajas): entran sus hijos directos.
+		var interior = raiz.querySelector(':scope > .e-con-inner') || raiz;
+		return Array.prototype.slice.call(interior.children);
+	}
+
+	/* Línea de entrada: algo entra cuando le queda un 12 % de pantalla por
+	   debajo, no cuando asoma el primer píxel. Sin umbral de proporción, así
+	   que da igual que el elemento sea más alto que la pantalla. */
+	var MARGEN = { rootMargin: '0px 0px -12% 0px', threshold: 0 };
+
+	/* Red de seguridad. Lo que está pegado al final del documento —la barra
+	   baja del pie, sin ir más lejos— nunca cruza esa línea: con el scroll al
+	   tope se queda por debajo y no entra jamás. Igual pasa en una página tan
+	   corta que cabe entera en una pantalla. Para eso vale con verlo entero. */
+	var ENTERO = { threshold: 1 };
+
+	/* Lo que ya está en pantalla al cargar quiere entrar en el peor momento:
+	   con el navegador todavía descargando y decodificando la foto grande del
+	   hero. Los primeros fotogramas se pierden y la coreografía sale a
+	   tirones. Se le da pista: el primer lote espera a que la página termine
+	   de cargar, con tope de 800 ms por si algo se atasca. Lo que llega
+	   después, bajando, entra al momento. */
+	var asentada = false;
+	var enEspera = [];
+
+	function asentar() {
+		if (asentada) { return; }
+		asentada = true;
+		var cola = enEspera.slice();
+		enEspera.length = 0;
+		cola.forEach(function (fn) { fn(); });
+	}
+
+	if (document.readyState === 'complete') {
+		asentar();
+	} else {
+		window.addEventListener('load', asentar, { once: true });
+		window.setTimeout(asentar, 800);
+	}
+
+	function cuandoAsiente(fn) {
+		if (asentada) { fn(); return; }
+		enEspera.push(fn);
+	}
+
+	/* Con la intro tapando la página, lo que entra ya está en pantalla pero
+	   nadie lo ve: se espera a que la sábana destape de verdad. La sábana ya
+	   hace de pista, así que ahí no hace falta esperar a la carga. */
+	function cuandoSeVea(fn) {
+		if (document.documentElement.classList.contains('cm-intro-activa')) {
+			document.addEventListener('cm:intro:sale', function () { requestAnimationFrame(fn); }, { once: true });
+			return;
+		}
+		cuandoAsiente(function () { requestAnimationFrame(fn); });
+	}
+
+	/** Vigila un grupo de elementos y avisa de cada uno cuando le toca: al
+	 *  cruzar la línea de entrada o al verse entero, lo que ocurra primero.
+	 *  Cada elemento avisa una sola vez. */
+	function vigilar(elementos, aviso) {
+		var pendientes = elementos.slice();
+		var ojos = [];
+
+		function apuntar(el) {
+			var i = pendientes.indexOf(el);
+			if (i === -1) { return false; }
+			pendientes.splice(i, 1);
+			ojos.forEach(function (io) { io.unobserve(el); });
+			return true;
+		}
+
+		[MARGEN, ENTERO].forEach(function (ajustes) {
+			var entero = ajustes === ENTERO;
+			var io = new IntersectionObserver(function (entradas) {
+				var llegan = [];
+				entradas.forEach(function (e) {
+					if (!e.isIntersecting) { return; }
+					// El 1 exacto se escapa por los decimales del navegador.
+					if (entero && e.intersectionRatio < 0.99) { return; }
+					if (apuntar(e.target)) { llegan.push(e.target); }
+				});
+				if (!llegan.length) { return; }
+				if (!pendientes.length) { ojos.forEach(function (o) { o.disconnect(); }); }
+				aviso(llegan);
+			}, ajustes);
+			elementos.forEach(function (el) { io.observe(el); });
+			ojos.push(io);
+		});
+	}
+
+	/** Va soltando las piezas según le toca a cada una, agrupando en un mismo
+	 *  lote las que aparecen a la vez para que entren escalonadas. */
+	function enLote(piezas, fn) {
+		var lote = [];
+		var esperando = false;
+
+		function soltar() {
+			esperando = false;
+			var grupo = lote.slice();
+			lote.length = 0;
+			if (grupo.length) { fn(grupo); }
+		}
+
+		vigilar(piezas, function (llegan) {
+			lote.push.apply(lote, llegan);
+			if (esperando) { return; }
+			esperando = true;
+			cuandoSeVea(soltar);
+		});
+	}
+
+	/** Dispara una sola vez, cuando el contenedor llega a la vista. No mira qué
+	 *  proporción ocupa: un bloque más alto que la pantalla también cuenta. */
+	function alLlegar(el, fn) {
+		vigilar([el], function () { cuandoSeVea(fn); });
 	}
 
 	/** Dispara una vez cuando el elemento ocupa de verdad la pantalla.
@@ -114,8 +304,13 @@
 		lenis: lenis,
 		irA: irA,
 		alEntrar: alEntrar,
+		piezasDe: piezasDe,
+		enLote: enLote,
+		alLlegar: alLlegar,
 		fondoDe: fondoDe,
 		colorGlobal: colorGlobal,
+		colorDeVariable: colorDeVariable,
+		fondoListo: fondoListo,
 		dur: dur
 	};
 
@@ -126,12 +321,13 @@
 	   anima: si además entrara el texto, se vería colocado, luego tapado y
 	   luego moviéndose otra vez. */
 	CM.registrar('cortina', function (el, op, c) {
-		var color;
-		if (op.color && op.color !== 'auto') {
-			color = c.colorGlobal(op.color) || c.fondoDe(el.previousElementSibling || document.body);
-		} else {
-			color = c.fondoDe(el.previousElementSibling || document.body);
-		}
+		// Color elegido en Elementor (selector nativo) o, si está vacío, el
+		// fondo de la sección anterior, que es lo que hace que parezca que la
+		// sección de arriba se desliza para dejar ver esta.
+		var color = c.colorDeVariable(el, '--cm-cortina-color')
+			|| c.fondoDe(el.previousElementSibling || document.body);
+
+		c.fondoListo(el);
 
 		var capa = document.createElement('div');
 		capa.className = 'cm-capa';
@@ -139,6 +335,28 @@
 		capa.style.background = color;
 		el.classList.add('cm-recorta');
 		el.prepend(capa);
+
+		// «Entra después»: el contenido va por encima de la cortina y aparece
+		// cuando ya ha pasado, así nunca se ve colocado, tapado y moviéndose.
+		if (op.contenido === 'despues') {
+			var interior = el.querySelector(':scope > .e-con-inner') || el;
+			var bloques = Array.prototype.filter.call(el.children, function (h) { return !h.classList.contains('cm-capa') && !h.classList.contains('elementor-motion-effects-container'); });
+			bloques.forEach(function (b) { b.classList.add('cm-encima'); });
+			// Las piezas que entran escalonadas: los widgets de dentro, no el bloque entero.
+			var piezas = [];
+			(interior === el ? bloques : [interior]).forEach(function (b) {
+				var dentro = b.querySelector(':scope > .e-con-inner') || b;
+				var hijos = Array.prototype.slice.call(dentro.children);
+				piezas = piezas.concat(hijos.length ? hijos : [b]);
+			});
+			c.gsap.set(piezas, { opacity: 0, y: 30 });
+			c.alEntrar(el, 0.45, function () {
+				c.gsap.to(piezas, {
+					opacity: 1, y: 0, duration: 0.55 * c.dur(op) + 0.5,
+					ease: 'power3.out', stagger: 0.09, clearProps: 'opacity,transform'
+				});
+			});
+		}
 
 		var salida = (op.direccion === 'izquierda') ? -101 : 101;
 		var velocidad = c.dur(op);
@@ -168,27 +386,41 @@
 		var img = el.querySelector('.elementor-widget-image');
 		if (!img || interior === el) { return; }
 
+		c.fondoListo(el);
 		interior.classList.add('cm-fijo');
 		img.classList.add('cm-marco');
 
 		// Todo lo que no sea la imagen se convierte en el rótulo de encima.
-		var rotulo = document.createElement('div');
-		rotulo.className = 'cm-rotulo';
-		Array.prototype.slice.call(interior.children).forEach(function (hijo) {
-			if (hijo !== img && !hijo.classList.contains('cm-rotulo')) { rotulo.appendChild(hijo); }
+		// El rótulo que aparece sobre la foto. Si el contenido va en UN
+		// contenedor hermano de la imagen, ese contenedor es el rótulo: se
+		// coloca encima de la foto a pantalla completa y su padding, su
+		// justificación y su alineación mandan, como en cualquier sección de
+		// Elementor. Si hay widgets sueltos, se envuelven en una caja centrada.
+		var sueltos = Array.prototype.filter.call(interior.children, function (h) {
+			return h !== img && !h.classList.contains('cm-rotulo') && !h.classList.contains('cm-velo') && !h.classList.contains('cm-progreso');
 		});
-		interior.appendChild(rotulo);
+		var rotulo;
+		if (sueltos.length === 1 && sueltos[0].classList.contains('e-con')) {
+			rotulo = sueltos[0];
+			rotulo.classList.add('cm-rotulo', 'cm-rotulo-propio');
+		} else {
+			rotulo = document.createElement('div');
+			rotulo.className = 'cm-rotulo cm-rotulo-caja';
+			sueltos.forEach(function (hijo) { rotulo.appendChild(hijo); });
+			interior.appendChild(rotulo);
+		}
 
 		// Velo opcional entre la foto y el rótulo: entra con el texto y se va con él.
 		// El color lo escribe Elementor en el contenedor como --cm-velo-color
 		// (selector de color nativo: global del Kit o uno cualquiera). Vacío: sin velo.
 		var velo = null;
-		var veloColor = (getComputedStyle(el).getPropertyValue('--cm-velo-color') || '').trim();
+		var veloColor = c.colorDeVariable(el, '--cm-velo-color');
 		var veloOpacidad = Math.max(0, Math.min(100, parseFloat(op.velo_opacidad))) || 0;
 		if (veloColor && veloOpacidad > 0) {
 			velo = document.createElement('div');
 			velo.className = 'cm-velo';
 			velo.setAttribute('aria-hidden', 'true');
+			velo.style.setProperty('--cm-velo-color', veloColor);
 			interior.appendChild(velo);
 		}
 
@@ -200,6 +432,8 @@
 			barra.className = 'cm-progreso';
 			barra.setAttribute('aria-hidden', 'true');
 			barra.innerHTML = '<i></i>';
+			var barraColor = c.colorDeVariable(el, '--cm-barra-color');
+			if (barraColor) { barra.style.setProperty('--cm-barra-color', barraColor); }
 			var grosor = Math.max(1, Math.min(8, parseFloat(op.barra_grosor))) || 2;
 			barra.style.setProperty('--cm-barra-grosor', grosor + 'px');
 			interior.appendChild(barra);
@@ -211,11 +445,15 @@
 		var tl = c.gsap.timeline({
 			scrollTrigger: { trigger: el, start: 'top top', end: 'bottom bottom', scrub: c.dur(op), invalidateOnRefresh: true }
 		});
+		// Crece hasta el tamaño real del panel, no hasta el de la ventana. En
+		// iOS no son lo mismo: `window.innerHeight` sube y baja con la barra
+		// de Safari mientras el panel mide `100svh` y no se mueve, así que la
+		// foto se quedaba corta y dejaba un dedo de fondo arriba y abajo.
 		tl.fromTo(img,
 			{ width: ancho, height: alto },
 			{
-				width: function () { return window.innerWidth; },
-				height: function () { return window.innerHeight; },
+				width: function () { return interior.clientWidth; },
+				height: function () { return interior.clientHeight; },
 				ease: 'power2.inOut', duration: 1
 			});
 		// pointerEvents al final: mientras el rótulo es invisible no debe
@@ -227,25 +465,46 @@
 		// La barra va DENTRO de la misma línea de tiempo, no en un
 		// ScrollTrigger aparte: con dos disparadores distintos la vuelta
 		// atrás no queda sincronizada y la barra se quedaba llena al subir.
+		// Se anima un número de avance, no un ancho: el CSS decide si eso es
+		// ancho (escritorio, línea abajo) o alto (móvil, línea de pie a la
+		// izquierda), y girar el teléfono no necesita recargar.
 		if (barra) {
-			tl.fromTo(barra.querySelector('i'),
-				{ width: '0%' },
-				{ width: '100%', ease: 'none', duration: tl.duration() || 1 }, 0);
+			tl.fromTo(barra,
+				{ '--cm-avance': 0 },
+				{ '--cm-avance': 1, ease: 'none', duration: tl.duration() || 1 }, 0);
 		}
 	});
 
-	/* Entrada escalonada del contenido del contenedor. */
+	/* Entrada escalonada: las piezas suben y aparecen, en orden de lectura.
+	   Dos disparos: «al llegar al bloque» lanza toda la coreografía de una vez
+	   (el visitante ve el bloque completo aunque siga bajando) y «pieza a
+	   pieza» revela cada una cuando llega a ella, atada al scroll. */
 	CM.registrar('entrada', function (el, op, c) {
-		var interior = el.querySelector(':scope > .e-con-inner') || el;
-		var hijos = interior.children;
-		if (!hijos.length) { return; }
-		c.gsap.set(hijos, { opacity: 0, y: 28 });
-		c.alEntrar(el, 0.35, function () {
-			c.gsap.to(hijos, {
-				opacity: 1, y: 0, duration: 0.55 * c.dur(op) + 0.5,
-				ease: 'power3.out', stagger: 0.09, clearProps: 'opacity,transform'
+		var piezas = c.piezasDe(el);
+		if (!piezas.length) { return; }
+
+		var v = c.dur(op);
+		c.gsap.set(piezas, { opacity: 0, y: 22 });
+
+		function entrar(grupo, seguidas) {
+			// Pieza a pieza, 70 ms de separación. Todas de una vez, el mismo
+			// ritmo pero con techo: un bloque de treinta líneas no puede tardar
+			// dos segundos y medio en acabar de salir.
+			var salto = seguidas
+				? { amount: Math.min(0.07 * (grupo.length - 1), 1.2) }
+				: 0.07;
+			c.gsap.to(grupo, {
+				opacity: 1, y: 0,
+				duration: 0.6 * v + 0.3, ease: 'power3.out', stagger: salto,
+				clearProps: 'opacity,transform'
 			});
-		});
+		}
+
+		if (op.disparo === 'piezas') {
+			c.enLote(piezas, function (grupo) { entrar(grupo, false); });
+			return;
+		}
+		c.alLlegar(el, function () { entrar(piezas, true); });
 	});
 
 	/* Gira hasta plantarse: para una marca o un icono grande de fondo. */
@@ -328,6 +587,8 @@
 	// quitado y puesto». Las entradas esperan a cm:intro:sale (ver alEntrar).
 	CM.aplicar();
 	CM._listo = true;
+	// Cada pieza ya está donde tiene que estar: se puede quitar la tapa.
+	destapar();
 	document.addEventListener('cm:intro:fin', function () { ScrollTrigger.refresh(); }, { once: true });
 
 	// ── Navegación por puntos ───────────────────────────────────────────

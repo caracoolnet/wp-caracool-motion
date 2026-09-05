@@ -16,6 +16,9 @@
 	will-change: transform;
 }
 
+/* Contenido por encima de la cortina («entra después»). */
+.cm-recorta > .cm-encima { position: relative; z-index: 7; }
+
 /* --- la foto crece ------------------------------------------------------ */
 .cm-fijo {
 	position: sticky;
@@ -54,12 +57,27 @@
 .cm-rotulo {
 	position: absolute;
 	z-index: 3;
+	opacity: 0;
+	pointer-events: none;
+}
+
+/* Widgets sueltos: caja centrada de ancho fijo. */
+.cm-rotulo-caja {
 	inset: auto;
 	max-width: 42rem;
 	padding: 0 24px;
 	text-align: center;
-	opacity: 0;
-	pointer-events: none;
+}
+
+/* El contenedor del contenido es el rótulo: ocupa la pantalla entera sobre
+   la foto y todo lo demás (padding, justificar, alinear, ancho de la
+   columna interior) se decide en Elementor. */
+.cm-fijo > .cm-rotulo-propio {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	max-width: none;
+	min-height: 0;
 }
 
 .cm-progreso {
@@ -72,10 +90,13 @@
 	background: rgba(127, 127, 127, .22);
 }
 
+/* El avance lo escribe el JavaScript como un número de 0 a 1 y lo reparte el
+   CSS: así la línea puede ser ancho o alto según el tamaño de pantalla, y
+   girar el teléfono la recoloca sola sin recargar. */
 .cm-progreso > i {
 	display: block;
 	height: 100%;
-	width: 0;
+	width: calc(var(--cm-avance, 0) * 100%);
 	background: var(--cm-barra-color, var(--e-global-color-accent, currentColor));
 }
 
@@ -152,6 +173,24 @@
 @media (max-width: 860px) {
 	.cm-puntos { display: none; }
 	.cm-fijo { height: 100svh; }
+
+	/* En un móvil lo que se recorre es alto, no ancho: la línea de avance va
+	   de pie, pegada al borde izquierdo de la foto. Abajo acababa peleándose
+	   con la barra del navegador, que aparece y desaparece, y en Safari se
+	   quedaba directamente fuera de lo visible. */
+	.cm-progreso {
+		top: 0;
+		bottom: 0;
+		left: 0;
+		right: auto;
+		width: var(--cm-barra-grosor, 2px);
+		height: auto;
+	}
+
+	.cm-progreso > i {
+		width: 100%;
+		height: calc(var(--cm-avance, 0) * 100%);
+	}
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -159,4 +198,22 @@
 	.cm-velo { display: none; }
 	.cm-rotulo { position: static; opacity: 1; }
 	.cm-fijo { position: static; height: auto; }
+
+	/* «La foto crece» necesita una sección de varias pantallas para tener
+	   recorrido de scroll. Sin animación esa altura se queda como un hueco
+	   enorme debajo del contenido, así que la sección vuelve a medir lo que
+	   mide lo que hay dentro. Va con !important porque la altura la escribe
+	   Elementor en la variable --min-height con más especificidad. */
+	[data-cm-efecto="crece"] {
+		--min-height: 0px !important;
+		min-height: 0 !important;
+		height: auto !important;
+	}
+
+	/* Y la foto, que sin animación no la dimensiona nadie, ocupa el ancho
+	   del bloque en vez de quedarse al tamaño que tuviera el marco. */
+	[data-cm-efecto="crece"] .elementor-widget-image img {
+		width: 100%;
+		height: auto;
+	}
 }
