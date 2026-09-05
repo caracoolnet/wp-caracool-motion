@@ -124,7 +124,8 @@ foreach ( $op as $clave => $def ) {
 	}
 	comprueba( "la opción '$clave' tiene un defecto válido", isset( $def['valores'][ $def['defecto'] ] ) );
 }
-comprueba( 'velo y línea usan el selector de color nativo de Elementor', 'color' === $op['velo']['tipo'] && 'color' === $op['barra_color']['tipo'] && 'interruptor' === $op['barra']['tipo'] && 'si' === $op['barra']['defecto'] );
+comprueba( 'velo, línea y cortina usan el selector de color nativo de Elementor', 'color' === $op['velo']['tipo'] && 'color' === $op['barra_color']['tipo'] && 'color' === $op['color']['tipo'] && 'interruptor' === $op['barra']['tipo'] && 'si' === $op['barra']['defecto'] );
+comprueba( 'ninguna opción de efecto es ya un desplegable de colores', ! array_filter( $op, function ( $d ) { return isset( $d['valores'] ) && array_intersect( array_keys( $d['valores'] ), array( 'primary', 'accent' ) ); } ) );
 
 echo "\n=== Botones · valores por defecto ===\n";
 $b = Caracool_Motion_Botones::get_settings();
@@ -206,6 +207,56 @@ foreach ( array( 'inventado', '', '<script>' ) as $malo ) {
 	comprueba( "fondo '$malo' cae en primary", 'primary' === $cb['fondo'], 'era ' . $cb['fondo'] );
 }
 comprueba( 'sin Elementor, la lista de colores trae los cuatro de sistema', 4 === count( Caracool_Motion_Cabecera::colores_globales() ) );
+
+echo "\n=== Entrada escalonada ===\n";
+comprueba( 'la entrada ofrece elegir cuándo entra', in_array( 'disparo', $fx['entrada']['opciones'], true ) );
+comprueba( 'los dos disparos son bloque y piezas', array( 'bloque', 'piezas' ) === array_keys( $op['disparo']['valores'] ) );
+comprueba( 'de fábrica entra todo al llegar al bloque', 'bloque' === $op['disparo']['defecto'] );
+comprueba( 'ya no queda rastro del enfoque', ! isset( $op['estilo'] ) );
+$js = file_get_contents( dirname( __DIR__ ) . '/assets/cm-scroll.js' );
+comprueba( 'la entrada anima piezas, no los hijos del contenedor', false !== strpos( $js, 'c.piezasDe( el )' ) || false !== strpos( $js, 'c.piezasDe(el)' ) );
+comprueba( 'las piezas se sueltan por lotes, sin umbral de altura', false !== strpos( $js, 'c.enLote(' ) && false === strpos( $js, "c.alEntrar(el, 0.35" ) );
+comprueba( 'una lista de precios entra línea a línea', false !== strpos( $js, 'ul.elementor-price-list' ) );
+comprueba( 'el disparo por bloque usa alLlegar', false !== strpos( $js, 'c.alLlegar( el' ) || false !== strpos( $js, 'c.alLlegar(el' ) );
+comprueba( 'el disparo pieza a pieza es el que se elige aparte', false !== strpos( $js, "op.disparo === 'piezas'" ) );
+comprueba( 'sin desenfoque en la entrada', false === strpos( $js, 'blur(7px)' ) );
+comprueba( 'los dos disparos miran por el mismo sitio', false !== strpos( $js, 'function vigilar(' ) && substr_count( $js, 'vigilar(' ) >= 3 );
+comprueba( 'red de seguridad para lo pegado al final de la página', false !== strpos( $js, 'var ENTERO = { threshold: 1 }' ) && false !== strpos( $js, 'intersectionRatio < 0.99' ) );
+comprueba( 'la línea de entrada sigue en el 12 % de abajo', false !== strpos( $js, "rootMargin: '0px 0px -12% 0px'" ) );
+
+echo "\n=== La foto crece y su línea de avance ===\n";
+$css = file_get_contents( dirname( __DIR__ ) . '/assets/cm-scroll.css' );
+comprueba( 'la foto crece hasta el panel, no hasta la ventana', false !== strpos( $js, 'return interior.clientWidth;' ) && false !== strpos( $js, 'return interior.clientHeight;' ) && false === strpos( $js, 'return window.innerHeight; }' ) );
+comprueba( 'el avance se anima como número, no como ancho', false !== strpos( $js, "{ '--cm-avance': 0 }" ) && false !== strpos( $js, "'--cm-avance': 1" ) );
+comprueba( 'en escritorio la línea es ancho', false !== strpos( $css, 'width: calc(var(--cm-avance, 0) * 100%);' ) );
+comprueba( 'en móvil la línea es alto', false !== strpos( $css, 'height: calc(var(--cm-avance, 0) * 100%);' ) );
+comprueba( 'y en móvil va de pie pegada a la izquierda', false !== strpos( $css, "\t.cm-progreso {\n\t\ttop: 0;\n\t\tbottom: 0;\n\t\tleft: 0;\n\t\tright: auto;" ) );
+
+echo "\n=== Nada de parpadeos al cargar ===\n";
+$php_scroll = file_get_contents( dirname( __DIR__ ) . '/modules/cm-scroll.php' );
+$en_head    = false;
+foreach ( $GLOBALS['acciones'] as $a ) {
+	if ( 'wp_head' === $a[0] && is_array( $a[1] ) && 'imprimir_guarda' === $a[1][1] ) { $en_head = true; }
+}
+comprueba( 'la guarda se imprime en la cabecera', $en_head );
+comprueba( 'tapa las piezas, no el contenedor (la foto de fondo se ve)', false !== strpos( $php_scroll, '[data-cm-efecto="entrada"] .elementor-widget{visibility:hidden}' ) );
+comprueba( 'la guarda no se pone con movimiento reducido', false !== strpos( $php_scroll, 'prefers-reduced-motion: reduce' ) && false !== strpos( $php_scroll, 'cm-entrando' ) );
+comprueba( 'y se quita sola si el JS no arranca', false !== strpos( $php_scroll, '},2000);' ) );
+comprueba( 'la guarda no se imprime dentro del editor', false !== strpos( $php_scroll, 'public function imprimir_guarda' ) && 1 < substr_count( $php_scroll, 'if ( self::editor_elementor() ) {' ) );
+comprueba( 'el JS destapa al terminar de colocar las piezas', false !== strpos( $js, 'function destapar()' ) && false !== strpos( $js, "CM._listo = true;\n\t// Cada pieza ya está donde tiene que estar: se puede quitar la tapa.\n\tdestapar();" ) );
+comprueba( 'y también destapa si no puede animar', false !== strpos( $js, "if (reducido || typeof window.gsap === 'undefined') { destapar(); return; }" ) );
+
+echo "\n=== Pista para el primer lote ===\n";
+comprueba( 'lo que ya se ve al cargar espera a que la página termine', false !== strpos( $js, 'function cuandoAsiente(' ) && false !== strpos( $js, "window.addEventListener('load', asentar" ) );
+comprueba( 'con tope de 800 ms por si algo se atasca', false !== strpos( $js, 'window.setTimeout(asentar, 800)' ) );
+comprueba( 'cuandoSeVea pasa por la pista', false !== strpos( $js, 'cuandoAsiente(function () { requestAnimationFrame(fn); })' ) );
+
+echo "\n=== La intro avisa cuando destapa de verdad ===\n";
+$ji = file_get_contents( dirname( __DIR__ ) . '/assets/cm-intro.js' );
+comprueba( 'el aviso sale del recorrido de la sábana, no del reloj', false !== strpos( $ji, 'var DESTAPE = 0.25' ) && false !== strpos( $ji, 'recorrido >= DESTAPE' ) );
+comprueba( 'ya no se avisa al empezar el tramo', false === strpos( $ji, 'tl.call(avisarSale' ) );
+comprueba( 'las dos salidas vigilan el destape', 2 === substr_count( $ji, 'onUpdate: vigilarDestape, onComplete: avisarSale' ) );
+comprueba( 'el aviso solo sale una vez', false !== strpos( $ji, 'if (dicho) { return; }' ) );
 
 echo "\n=== Pestaña de Elementor ===\n";
 foreach ( array( 'modules/cm-scroll.php', 'modules/cm-botones.php' ) as $f ) {
