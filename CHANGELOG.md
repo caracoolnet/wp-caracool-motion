@@ -2,8 +2,33 @@
 
 Numeración: se sube 0.1 en 0.1 cuando una tanda de cambios queda cerrada y
 confirmada. Los arreglos sobre algo aún sin confirmar no suben número. El
-tercer dígito se reserva para republicar una tanda ya cerrada cuando hace falta
-que el actualizador de las webs se entere: no lleva cambios de código.
+tercer dígito es para lo que ya está publicado: republicar una tanda cerrada
+cuando hace falta que el actualizador de las webs se entere, o arreglar algo
+que se ha escapado en una versión que ya está instalada en algún sitio.
+
+## 0.6.1 (8 de septiembre de 2026)
+
+Arreglo de la 0.6.0, que llegó a instalarse rota en porherencia.com.
+
+- **La caché de Elementor dejaba páginas sin ScrollTrigger.** La 0.6.0 decidía
+  qué librerías cargar por los efectos que había visto pintar. Elementor guarda
+  el HTML ya pintado de cada elemento y, cuando lo sirve de ahí, no vuelve a
+  pasar por el plugin: la página llevaba su cortina en el HTML y aquí no
+  constaba ningún efecto, así que ScrollTrigger no viajaba. En la home y en el
+  menú degustación la cortina y «la foto crece» se quedaron sin hacer nada —con
+  el hueco de la sección de 260 vh— y la consola avisando. Duró lo que tardamos
+  en comprobarlo.
+- **Ahora se mira el documento, no el momento de pintar.** El plugin lee los
+  datos guardados de cada documento de Elementor que sale en la página —la
+  página, la cabecera, el pie— y de ahí saca qué efectos lleva. Funciona igual
+  con la caché encendida y con ella apagada. Los documentos los da la propia
+  cola de estilos de Elementor (`elementor-post-<id>`), que es su registro de
+  lo que ha pintado.
+- Si un documento guarda un efecto que aquí no consta —uno que ponga un filtro
+  que en esa petición no se ha registrado—, se carga ScrollTrigger igualmente.
+- Las pruebas de esto ya no miran el código por dentro: montan una página, la
+  hacen pasar por el plugin y comprueban con qué se queda. Ninguna simula el
+  pintado, que es justo el caso de la caché.
 
 ## 0.6.0 (8 de septiembre de 2026)
 

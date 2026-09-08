@@ -3,7 +3,7 @@
  * Plugin Name:  Caracool Motion
  * Plugin URI:   https://github.com/caracoolnet/wp-caracool-motion
  * Description:  Movimiento para webs hechas con Elementor: scroll con inercia y transiciones de sección que se eligen desde el propio panel de Elementor, sin escribir código ni CSS suelto.
- * Version:      0.6.0
+ * Version:      0.6.1
  * Author:       Caracool
  * Author URI:   https://caracool.net
  * License:      GPL-2.0-or-later
@@ -40,7 +40,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'CARACOOL_MOTION_VERSION', '0.6.0' );
+define( 'CARACOOL_MOTION_VERSION', '0.6.1' );
 define( 'CARACOOL_MOTION_FILE', __FILE__ );
 define( 'CARACOOL_MOTION_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CARACOOL_MOTION_URL', plugin_dir_url( __FILE__ ) );
