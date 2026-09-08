@@ -5,6 +5,30 @@ confirmada. Los arreglos sobre algo aún sin confirmar no suben número. El
 tercer dígito se reserva para republicar una tanda ya cerrada cuando hace falta
 que el actualizador de las webs se entere: no lleva cambios de código.
 
+## 0.6.0 (8 de septiembre de 2026)
+
+Cada página se lleva solo las librerías que usa, y se va un efecto que no
+aportaba.
+
+- **ScrollTrigger solo donde hace falta.** Los efectos se reparten en dos
+  familias: «cortina», «la foto crece» y «parallax» van atados al scroll y
+  necesitan ScrollTrigger; «entrada» y «la marca se planta» van por
+  IntersectionObserver y no lo necesitan. Hasta ahora se cargaba en todas las
+  páginas por igual. Ahora el catálogo declara cuáles van atados al scroll
+  (`'scroll' => true`), el módulo apunta qué efectos ha inyectado de verdad y
+  encola ScrollTrigger solo si alguno lo pide. En porherencia.com eso son
+  **43 KB menos en ocho de las doce páginas**: todas menos la portada y el menú
+  degustación, que son las únicas con cortina o con la foto que crece.
+- **Lenis solo con la inercia activada.** Se registraba como dependencia fija
+  aunque el motor estuviera apagado. Ahora se añade solo cuando toca.
+- **Fuera «gira hasta plantarse».** Hacía casi lo mismo que «la marca se planta
+  y el disco crece», que es la buena, y no estaba puesto en ninguna página.
+  Quedan cinco efectos de sección.
+- Un efecto de scroll que llegue por filtro sin declararse como tal cuenta como
+  que lo necesita: más vale cargar de más que romperlo. Y si aun así falta
+  ScrollTrigger, el efecto no se aplica y avisa por consola en vez de lanzar
+  una excepción por cada contenedor.
+
 ## 0.5.1 (8 de septiembre de 2026)
 
 Misma tanda que la 0.5.0: sube el número solo para que las webs se enteren.
