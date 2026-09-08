@@ -47,6 +47,12 @@ class Caracool_Motion_Scroll {
 	 * Se guarda el conjunto, no un simple sí/no, porque de él depende qué
 	 * librerías hacen falta: ScrollTrigger solo viaja si algún efecto va
 	 * atado al scroll. Ver `imprimir_assets()`.
+	 *
+	 * ⚠️ Esta lista sola no basta: Elementor guarda el HTML ya pintado de cada
+	 * elemento en su caché, y cuando lo sirve de ahí no vuelve a pasar por
+	 * `inyectar_atributos()`. La página llevaría su cortina en el HTML y aquí
+	 * no constaría ningún efecto. Por eso `efectos_de_la_pagina()` lee además
+	 * los datos guardados de cada documento de Elementor que se ha pintado.
 	 */
 	private static $efectos_vistos = array();
 
@@ -364,6 +370,85 @@ class Caracool_Motion_Scroll {
 
 	// ── 3) Assets, solo si hacen falta ──────────────────────────────────
 
+	/**
+	 * Los documentos de Elementor que se han pintado en esta página.
+	 *
+	 * Elementor encola la hoja de estilos de cada documento que sale en la
+	 * página con el nombre `elementor-post-<id>`: la página, la cabecera, el
+	 * pie, el Kit. Esa cola es su propio registro de lo que ha pintado, y
+	 * funciona igual con la caché de elementos encendida.
+	 */
+	private static function documentos_de_la_pagina() {
+		$ids     = array();
+		$estilos = wp_styles();
+
+		if ( $estilos ) {
+			$colas = array_merge( (array) $estilos->queue, (array) $estilos->done );
+			foreach ( $colas as $nombre ) {
+				if ( 0 === strpos( $nombre, 'elementor-post-' ) ) {
+					$id = (int) substr( $nombre, strlen( 'elementor-post-' ) );
+					if ( $id ) {
+						$ids[ $id ] = true;
+					}
+				}
+			}
+		}
+
+		if ( is_singular() ) {
+			$actual = (int) get_queried_object_id();
+			if ( $actual ) {
+				$ids[ $actual ] = true;
+			}
+		}
+
+		return array_keys( $ids );
+	}
+
+	/**
+	 * Qué efectos lleva esta página, mire quien mire.
+	 *
+	 * Junta lo que se ha visto al pintar con lo que dicen los datos guardados
+	 * de cada documento. Si un documento no se puede leer, se cuenta como que
+	 * puede llevar cualquier cosa: más vale cargar de más que romperlo.
+	 *
+	 * @return array{efectos: array<string,bool>, dudoso: bool}
+	 */
+	private static function efectos_de_la_pagina() {
+		$efectos  = self::$efectos_vistos;
+		$dudoso   = false;
+		$catalogo = self::efectos();
+
+		foreach ( self::documentos_de_la_pagina() as $id ) {
+			$datos = get_post_meta( $id, '_elementor_data', true );
+
+			if ( ! is_string( $datos ) || false === strpos( $datos, 'cm_efecto' ) ) {
+				continue;
+			}
+
+			if ( ! preg_match_all( '/"cm_efecto":"([a-z0-9_\-]*)"/', $datos, $encontrados ) ) {
+				continue;
+			}
+
+			foreach ( $encontrados[1] as $nombre ) {
+				if ( '' === $nombre || 'no' === $nombre ) {
+					continue;
+				}
+				if ( isset( $catalogo[ $nombre ] ) ) {
+					$efectos[ $nombre ] = true;
+				} else {
+					// Un efecto guardado que aquí no consta: lo pondría un
+					// filtro que en esta petición no se ha registrado.
+					$dudoso = true;
+				}
+			}
+		}
+
+		return array(
+			'efectos' => $efectos,
+			'dudoso'  => $dudoso,
+		);
+	}
+
 	public function registrar_assets() {
 		$base = CARACOOL_MOTION_URL . 'assets/';
 		wp_register_style( 'cm-scroll', $base . 'cm-scroll.css', array(), caracool_motion_ver( 'cm-scroll.css' ) );
@@ -411,7 +496,10 @@ class Caracool_Motion_Scroll {
 		// falta aunque esta página no tenga ningún efecto de sección.
 		$hay_motor = ( 'si' === $conf['inercia'] || 'si' === $conf['puntos'] );
 
-		if ( ! self::$efectos_vistos && ! $hay_motor ) {
+		$pagina  = self::efectos_de_la_pagina();
+		$efectos = $pagina['efectos'];
+
+		if ( ! $efectos && ! $pagina['dudoso'] && ! $hay_motor ) {
 			return;
 		}
 
@@ -429,11 +517,13 @@ class Caracool_Motion_Scroll {
 		 * de scroll: más vale cargar de más que romperlo.
 		 */
 		$catalogo    = self::efectos();
-		$necesita_st = false;
-		foreach ( array_keys( self::$efectos_vistos ) as $nombre ) {
-			if ( ! isset( $catalogo[ $nombre ]['scroll'] ) || $catalogo[ $nombre ]['scroll'] ) {
-				$necesita_st = true;
-				break;
+		$necesita_st = $pagina['dudoso'];
+		if ( ! $necesita_st ) {
+			foreach ( array_keys( $efectos ) as $nombre ) {
+				if ( ! isset( $catalogo[ $nombre ]['scroll'] ) || $catalogo[ $nombre ]['scroll'] ) {
+					$necesita_st = true;
+					break;
+				}
 			}
 		}
 
