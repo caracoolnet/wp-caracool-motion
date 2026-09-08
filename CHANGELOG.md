@@ -1,7 +1,20 @@
 # Changelog — Caracool Motion
 
 Numeración: se sube 0.1 en 0.1 cuando una tanda de cambios queda cerrada y
-confirmada. Los arreglos sobre algo aún sin confirmar no suben número.
+confirmada. Los arreglos sobre algo aún sin confirmar no suben número. El
+tercer dígito se reserva para republicar una tanda ya cerrada cuando hace falta
+que el actualizador de las webs se entere: no lleva cambios de código.
+
+## 0.5.1 (8 de septiembre de 2026)
+
+Misma tanda que la 0.5.0: sube el número solo para que las webs se enteren.
+La 0.5.0 se publicó el 5 de septiembre con el arreglo del hueco por movimiento
+reducido, pero las webs que ya tenían instalada una 0.5.0 anterior no lo
+recibían: el actualizador compara números y los dos eran iguales, así que no
+aparecía el aviso. Porherencia.com seguía con el archivo del 4 de septiembre.
+
+- Nada nuevo en el código respecto a la 0.5.0 publicada. Lo que cambia es el
+  número, para que el aviso de actualización llegue a las webs instaladas.
 
 ## 0.5.0 (5 de septiembre de 2026)
 
