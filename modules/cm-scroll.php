@@ -41,8 +41,14 @@ class Caracool_Motion_Scroll {
 
 	const OPTION_KEY = 'caracool_motion_scroll';
 
-	/** true en cuanto se inyecta de verdad un efecto en la página servida. */
-	private static $necesita_assets = false;
+	/**
+	 * Los efectos que se han inyectado de verdad en la página servida.
+	 *
+	 * Se guarda el conjunto, no un simple sí/no, porque de él depende qué
+	 * librerías hacen falta: ScrollTrigger solo viaja si algún efecto va
+	 * atado al scroll. Ver `imprimir_assets()`.
+	 */
+	private static $efectos_vistos = array();
 
 	public function __construct() {
 		add_action( 'elementor/element/container/section_border/after_section_end', array( $this, 'controles_contenedor' ), 10, 2 );
@@ -65,31 +71,31 @@ class Caracool_Motion_Scroll {
 					'etiqueta' => 'Cortina lateral',
 					'ayuda'    => 'La sección llega tapada por una capa del color de la sección anterior y se destapa al deslizarse. Con este efecto el contenido no se anima: la cortina ya es la animación.',
 					'opciones' => array( 'direccion', 'velocidad', 'color', 'contenido' ),
+					'scroll'   => true,
 				),
 				'crece'    => array(
 					'etiqueta' => 'La foto crece',
 					'ayuda'    => 'La sección se queda fija mientras la primera imagen que contenga crece hasta ocupar la pantalla. El resto del contenido aparece encima al final, y con él, si se quiere, un velo entre la foto y el texto para que se lea. Da al contenedor una altura mínima de 240vh o más. Estructura: dentro, un contenedor con la imagen y UN contenedor hermano con el contenido; ese contenedor pasa a ocupar toda la pantalla sobre la foto y su padding, justificación y alineación mandan (como en cualquier sección). Si hay widgets sueltos en vez de un contenedor, salen centrados.',
 					'opciones' => array( 'velocidad', 'velo', 'velo_opacidad', 'barra', 'barra_color', 'barra_grosor' ),
+					'scroll'   => true,
 				),
 				'entrada'  => array(
 					'etiqueta' => 'Entrada escalonada',
 					'ayuda'    => 'Las piezas del contenedor (cada texto, cada botón y, en una lista de precios, cada línea) suben y aparecen una detrás de otra, en orden de lectura. Se elige si la coreografía se lanza entera al llegar al bloque o si cada pieza espera a que llegues a ella.',
 					'opciones' => array( 'disparo', 'velocidad' ),
+					'scroll'   => false,
 				),
 				'parallax' => array(
 					'etiqueta' => 'Parallax',
 					'ayuda'    => 'El contenido del contenedor se desplaza más despacio que la página.',
 					'opciones' => array( 'velocidad' ),
+					'scroll'   => true,
 				),
 				'marca'    => array(
 					'etiqueta' => 'La marca se planta y el disco crece',
 					'ayuda'    => 'Para un logotipo en SVG con una forma grande y una marca fuera de ella (un aspa, un punto): la marca entra girando y se planta, y la forma grande crece desde su centro. Es la misma coreografía que la intro, pensada para un logotipo enorme de fondo que se sale del contenedor.',
 					'opciones' => array( 'velocidad' ),
-				),
-				'gira'     => array(
-					'etiqueta' => 'Gira hasta plantarse',
-					'ayuda'    => 'El contenedor entra girando y creciendo un poco hasta quedarse quieto, la primera vez que aparece. Pensado para una marca o un icono grande de fondo.',
-					'opciones' => array( 'velocidad' ),
+					'scroll'   => false,
 				),
 			)
 		);
@@ -353,7 +359,7 @@ class Caracool_Motion_Scroll {
 			$element->add_render_attribute( '_wrapper', 'data-cm-' . $clave, $valor );
 		}
 
-		self::$necesita_assets = true;
+		self::$efectos_vistos[ $efecto ] = true;
 	}
 
 	// ── 3) Assets, solo si hacen falta ──────────────────────────────────
@@ -364,7 +370,9 @@ class Caracool_Motion_Scroll {
 		wp_register_script( 'cm-gsap', $base . 'gsap.min.js', array(), '3.12.5', true );
 		wp_register_script( 'cm-scrolltrigger', $base . 'ScrollTrigger.min.js', array( 'cm-gsap' ), '3.12.5', true );
 		wp_register_script( 'cm-lenis', $base . 'lenis.min.js', array(), '1.1.20', true );
-		wp_register_script( 'cm-scroll', $base . 'cm-scroll.js', array( 'cm-gsap', 'cm-scrolltrigger', 'cm-lenis' ), caracool_motion_ver( 'cm-scroll.js' ), true );
+		// Solo GSAP es obligatorio. ScrollTrigger y Lenis se añaden como
+		// dependencia en `imprimir_assets()`, y solo cuando la página los pide.
+		wp_register_script( 'cm-scroll', $base . 'cm-scroll.js', array( 'cm-gsap' ), caracool_motion_ver( 'cm-scroll.js' ), true );
 	}
 
 	/**
@@ -403,8 +411,43 @@ class Caracool_Motion_Scroll {
 		// falta aunque esta página no tenga ningún efecto de sección.
 		$hay_motor = ( 'si' === $conf['inercia'] || 'si' === $conf['puntos'] );
 
-		if ( ! self::$necesita_assets && ! $hay_motor ) {
+		if ( ! self::$efectos_vistos && ! $hay_motor ) {
 			return;
+		}
+
+		/*
+		 * Cada página se lleva solo las librerías que usa.
+		 *
+		 * - GSAP siempre: lo usan todos los efectos.
+		 * - ScrollTrigger solo si algún efecto de la página va atado al scroll
+		 *   (`'scroll' => true` en el catálogo). «Entrada» y «marca», que son
+		 *   los más usados, van por IntersectionObserver y no lo necesitan: una
+		 *   página que solo lleve esos dos se ahorra 43 KB.
+		 * - Lenis solo si la inercia está activada.
+		 *
+		 * Un efecto añadido por el filtro que no declare la marca cuenta como
+		 * de scroll: más vale cargar de más que romperlo.
+		 */
+		$catalogo    = self::efectos();
+		$necesita_st = false;
+		foreach ( array_keys( self::$efectos_vistos ) as $nombre ) {
+			if ( ! isset( $catalogo[ $nombre ]['scroll'] ) || $catalogo[ $nombre ]['scroll'] ) {
+				$necesita_st = true;
+				break;
+			}
+		}
+
+		$deps = array( 'cm-gsap' );
+		if ( $necesita_st ) {
+			$deps[] = 'cm-scrolltrigger';
+		}
+		if ( 'si' === $conf['inercia'] ) {
+			$deps[] = 'cm-lenis';
+		}
+
+		$scripts = wp_scripts();
+		if ( isset( $scripts->registered['cm-scroll'] ) ) {
+			$scripts->registered['cm-scroll']->deps = $deps;
 		}
 
 		wp_enqueue_style( 'cm-scroll' );
