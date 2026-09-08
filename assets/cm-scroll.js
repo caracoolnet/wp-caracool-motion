@@ -23,6 +23,10 @@
 	// ── Registro público ────────────────────────────────────────────────
 	var CM = window.CaracoolMotion = window.CaracoolMotion || {
 		efectos: {},
+		/* Efectos atados al scroll: son los que necesitan ScrollTrigger. El PHP
+		   usa la misma lista (la marca «scroll» del catálogo) para decidir si
+		   lo encola. Si añades un efecto con scrub, apúntalo en los dos sitios. */
+		deScroll: ['cortina', 'crece', 'parallax'],
 		registrar: function (nombre, fn) {
 			this.efectos[nombre] = fn;
 			if (this._listo) { this.aplicar(nombre); }
@@ -39,7 +43,13 @@
 	}
 
 	if (reducido || typeof window.gsap === 'undefined') { destapar(); return; }
-	gsap.registerPlugin(ScrollTrigger);
+
+	/* ScrollTrigger solo viaja si la página lleva algún efecto atado al scroll
+	   (cortina, crece, parallax). Las páginas que solo usan entrada o marca no
+	   lo cargan: esos dos van por IntersectionObserver. Todo lo que dependa de
+	   él tiene que mirar antes si está. */
+	var hayST = typeof window.ScrollTrigger !== 'undefined';
+	if (hayST) { gsap.registerPlugin(ScrollTrigger); }
 
 	// ── Utilidades compartidas que reciben todos los efectos ────────────
 
@@ -283,7 +293,7 @@
 			smoothWheel: true,
 			syncTouch: false
 		});
-		lenis.on('scroll', ScrollTrigger.update);
+		if (hayST) { lenis.on('scroll', ScrollTrigger.update); }
 		gsap.ticker.add(function (t) { lenis.raf(t * 1000); });
 		gsap.ticker.lagSmoothing(0);
 		// Con Lenis activo, window.scrollTo deja de mover la página. Se expone
@@ -507,15 +517,6 @@
 		c.alLlegar(el, function () { entrar(piezas, true); });
 	});
 
-	/* Gira hasta plantarse: para una marca o un icono grande de fondo. */
-	CM.registrar('gira', function (el, op, c) {
-		var interior = el.querySelector(':scope > .e-con-inner') || el;
-		c.gsap.set(interior, { transformOrigin: '50% 50%', rotation: -60, scale: 0.6, opacity: 0 });
-		c.alEntrar(el, 0.15, function () {
-			c.gsap.to(interior, { rotation: 0, scale: 1, opacity: 1, duration: 1.1 * c.dur(op) + 0.5, ease: 'expo.out', clearProps: 'opacity,transform' });
-		});
-	});
-
 	/* La marca se planta y el disco crece: la coreografía de la intro, para un
 	   logotipo enorme de fondo. Deduce las piezas igual que el módulo Intro:
 	   la forma con más área es el disco; las que caen fuera de él, la marca. */
@@ -573,6 +574,14 @@
 			if (el.dataset.cmHecho === '1') { return; }
 			var fn = CM.efectos[nombre];
 			if (typeof fn !== 'function') { return; }
+			// Si el PHP no encoló ScrollTrigger y el efecto lo necesita, no se
+			// aplica: mejor sin animación que con una excepción por cada
+			// contenedor. Pasa solo si alguien añade el efecto por filtro sin
+			// declararlo como «de scroll» en el catálogo.
+			if (!hayST && CM.deScroll.indexOf(nombre) >= 0) {
+				if (window.console) { console.warn('Caracool Motion · el efecto "' + nombre + '" necesita ScrollTrigger y no está cargado'); }
+				return;
+			}
 			el.dataset.cmHecho = '1';
 			try {
 				fn(el, opcionesDe(el), ctx);
@@ -589,7 +598,7 @@
 	CM._listo = true;
 	// Cada pieza ya está donde tiene que estar: se puede quitar la tapa.
 	destapar();
-	document.addEventListener('cm:intro:fin', function () { ScrollTrigger.refresh(); }, { once: true });
+	document.addEventListener('cm:intro:fin', function () { if (hayST) { ScrollTrigger.refresh(); } }, { once: true });
 
 	// ── Navegación por puntos ───────────────────────────────────────────
 
@@ -692,7 +701,7 @@
 	// ScrollTrigger mide al cargar. Si la tipografía llega después, la página
 	// cambia de alto y todos los disparos quedan corridos.
 
-	function refrescar() { ScrollTrigger.refresh(); }
+	function refrescar() { if (hayST) { ScrollTrigger.refresh(); } }
 
 	if (document.fonts && document.fonts.ready) {
 		document.fonts.ready.then(function () { setTimeout(refrescar, 60); });
