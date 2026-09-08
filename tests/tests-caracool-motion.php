@@ -101,14 +101,23 @@ foreach ( array( '99', '-4', 'abc', '' ) as $malo ) {
 
 echo "\n=== Catálogo de efectos ===\n";
 $fx = Caracool_Motion_Scroll::efectos();
-comprueba( 'los seis efectos de serie están', 6 === count( $fx ) && isset( $fx['cortina'], $fx['crece'], $fx['entrada'], $fx['parallax'], $fx['gira'], $fx['marca'] ) );
+comprueba( 'los cinco efectos de serie están', 5 === count( $fx ) && isset( $fx['cortina'], $fx['crece'], $fx['entrada'], $fx['parallax'], $fx['marca'] ) );
 $op = Caracool_Motion_Scroll::opciones();
 foreach ( $fx as $clave => $def ) {
 	$todas = true;
 	foreach ( $def['opciones'] as $o ) { if ( ! isset( $op[ $o ] ) ) { $todas = false; } }
 	comprueba( "el efecto '$clave' solo pide opciones que existen", $todas );
 	comprueba( "el efecto '$clave' tiene etiqueta", ! empty( $def['etiqueta'] ) );
+	comprueba( "el efecto '$clave' declara si va atado al scroll", isset( $def['scroll'] ) && is_bool( $def['scroll'] ) );
 }
+comprueba(
+	'los efectos con scrub son los tres de siempre',
+	array( 'cortina', 'crece', 'parallax' ) === array_keys( array_filter( $fx, function ( $d ) { return ! empty( $d['scroll'] ); } ) )
+);
+comprueba(
+	'entrada y marca no piden ScrollTrigger',
+	false === $fx['entrada']['scroll'] && false === $fx['marca']['scroll']
+);
 foreach ( $op as $clave => $def ) {
 	if ( isset( $def['tipo'] ) && 'color' === $def['tipo'] ) {
 		comprueba( "la opción de color '$clave' declara su variable CSS", ! empty( $def['variable'] ) && 0 === strpos( $def['variable'], '--cm-' ) );
@@ -214,6 +223,18 @@ comprueba( 'los dos disparos son bloque y piezas', array( 'bloque', 'piezas' ) =
 comprueba( 'de fábrica entra todo al llegar al bloque', 'bloque' === $op['disparo']['defecto'] );
 comprueba( 'ya no queda rastro del enfoque', ! isset( $op['estilo'] ) );
 $js = file_get_contents( dirname( __DIR__ ) . '/assets/cm-scroll.js' );
+comprueba( 'el JS mira si ScrollTrigger está antes de registrarlo', false !== strpos( $js, "var hayST = typeof window.ScrollTrigger !== 'undefined'" ) );
+$st_sin_guarda = array_values( array_filter(
+	explode( "\n", $js ),
+	function ( $l ) {
+		if ( false === strpos( $l, 'ScrollTrigger.' ) ) { return false; }
+		if ( false !== strpos( $l, 'hayST' ) ) { return false; }
+		return false === strpos( $l, '*' ); // los comentarios no cuentan
+	}
+) );
+comprueba( 'ninguna llamada a ScrollTrigger queda sin guarda', array() === $st_sin_guarda, implode( ' | ', $st_sin_guarda ) );
+comprueba( 'el JS lleva la lista de efectos de scroll', false !== strpos( $js, "deScroll: ['cortina', 'crece', 'parallax']" ) );
+comprueba( 'un efecto de scroll no se aplica sin ScrollTrigger', false !== strpos( $js, 'if (!hayST && CM.deScroll.indexOf(nombre) >= 0)' ) );
 comprueba( 'la entrada anima piezas, no los hijos del contenedor', false !== strpos( $js, 'c.piezasDe( el )' ) || false !== strpos( $js, 'c.piezasDe(el)' ) );
 comprueba( 'las piezas se sueltan por lotes, sin umbral de altura', false !== strpos( $js, 'c.enLote(' ) && false === strpos( $js, "c.alEntrar(el, 0.35" ) );
 comprueba( 'una lista de precios entra línea a línea', false !== strpos( $js, 'ul.elementor-price-list' ) );
@@ -234,6 +255,10 @@ comprueba( 'y en móvil va de pie pegada a la izquierda', false !== strpos( $css
 
 echo "\n=== Nada de parpadeos al cargar ===\n";
 $php_scroll = file_get_contents( dirname( __DIR__ ) . '/modules/cm-scroll.php' );
+comprueba( 'cm-scroll se registra solo con GSAP como dependencia fija', (bool) preg_match( "/wp_register_script\\(\\s*'cm-scroll'.*?array\\(\\s*'cm-gsap'\\s*\\)/s", $php_scroll ) );
+comprueba( 'ScrollTrigger se encola solo si algún efecto va atado al scroll', false !== strpos( $php_scroll, "\$necesita_st" ) && false !== strpos( $php_scroll, "\$deps[] = 'cm-scrolltrigger';" ) );
+comprueba( 'Lenis se encola solo con la inercia activada', (bool) preg_match( "/if \\( 'si' === \\\$conf\\['inercia'\\] \\) \\{\\s*\\\$deps\\[\\] = 'cm-lenis';/", $php_scroll ) );
+comprueba( 'se guarda el conjunto de efectos vistos, no un booleano', false !== strpos( $php_scroll, '$efectos_vistos' ) && false === strpos( $php_scroll, '$necesita_assets' ) );
 $en_head    = false;
 foreach ( $GLOBALS['acciones'] as $a ) {
 	if ( 'wp_head' === $a[0] && is_array( $a[1] ) && 'imprimir_guarda' === $a[1][1] ) { $en_head = true; }
