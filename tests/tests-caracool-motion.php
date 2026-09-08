@@ -11,6 +11,12 @@ $GLOBALS['filtros']   = array();
 $GLOBALS['fallos']    = array();
 $GLOBALS['ok']        = 0;
 
+// Estado de la página servida, para las pruebas de carga condicional.
+$GLOBALS['es_singular']     = false;
+$GLOBALS['id_consultado']   = 0;
+$GLOBALS['datos_elementor'] = array();
+$GLOBALS['encolados']       = array();
+
 define( 'ABSPATH', __DIR__ );
 define( 'MINUTE_IN_SECONDS', 60 );
 define( 'HOUR_IN_SECONDS', 3600 );
@@ -44,7 +50,8 @@ function wp_die( $m ) {}
 function wp_parse_args( $a, $d ) { return array_merge( $d, (array) $a ); }
 function wp_json_encode( $v ) { return json_encode( $v ); }
 function wp_register_style() {} function wp_register_script() {}
-function wp_enqueue_style() {} function wp_enqueue_script() {}
+function wp_enqueue_style( $h = '' ) { $GLOBALS['encolados'][] = $h; }
+function wp_enqueue_script( $h = '' ) { $GLOBALS['encolados'][] = $h; }
 function wp_add_inline_script() {}
 function wp_remote_get( $u, $a = array() ) { return new WP_Error(); }
 function wp_remote_retrieve_response_code( $r ) { return 0; }
@@ -56,10 +63,17 @@ function is_admin() { return false; }
 function wp_doing_ajax() { return false; }
 function is_feed() { return false; }
 function is_embed() { return false; }
-function is_singular() { return false; }
+function is_singular() { return ! empty( $GLOBALS['es_singular'] ); }
 function is_front_page() { return true; }
-function get_queried_object_id() { return 0; }
-function get_post_meta( $id, $k, $s = false ) { return array(); }
+function get_queried_object_id() { return isset( $GLOBALS['id_consultado'] ) ? (int) $GLOBALS['id_consultado'] : 0; }
+function get_post_meta( $id, $k, $s = false ) {
+	if ( '_elementor_data' === $k && isset( $GLOBALS['datos_elementor'][ $id ] ) ) { return $GLOBALS['datos_elementor'][ $id ]; }
+	return array();
+}
+class CM_Cola { public $queue = array(); public $done = array(); public $registered = array(); }
+class CM_Script { public $deps = array(); public function __construct( $d ) { $this->deps = $d; } }
+function wp_styles() { return $GLOBALS['estilos']; }
+function wp_scripts() { return $GLOBALS['scripts']; }
 function absint( $v ) { return abs( (int) $v ); }
 function sanitize_hex_color( $c ) { return preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', (string) $c ) ? $c : ''; }
 function get_attached_file( $id ) { return ''; }
@@ -270,6 +284,87 @@ comprueba( 'y se quita sola si el JS no arranca', false !== strpos( $php_scroll,
 comprueba( 'la guarda no se imprime dentro del editor', false !== strpos( $php_scroll, 'public function imprimir_guarda' ) && 1 < substr_count( $php_scroll, 'if ( self::editor_elementor() ) {' ) );
 comprueba( 'el JS destapa al terminar de colocar las piezas', false !== strpos( $js, 'function destapar()' ) && false !== strpos( $js, "CM._listo = true;\n\t// Cada pieza ya está donde tiene que estar: se puede quitar la tapa.\n\tdestapar();" ) );
 comprueba( 'y también destapa si no puede animar', false !== strpos( $js, "if (reducido || typeof window.gsap === 'undefined') { destapar(); return; }" ) );
+
+echo "\n=== Cada página se lleva solo lo suyo ===\n";
+/*
+ * Estas se ejecutan de verdad: se monta una página, se llama a
+ * `imprimir_assets()` y se mira con qué dependencias se queda `cm-scroll`.
+ *
+ * Importante: no se llama a `inyectar_atributos()` en ninguna, así que la
+ * lista de efectos vistos al pintar está vacía. Es a propósito: es justo lo
+ * que pasa cuando Elementor sirve el HTML desde su caché de elementos. Si
+ * estas pruebas pasan, el reparto de librerías funciona también con la caché.
+ */
+function cm_montar_pagina( $documentos, $inercia = 'si', $singular = 0 ) {
+	$ref = new ReflectionProperty( 'Caracool_Motion_Scroll', 'efectos_vistos' );
+	$ref->setAccessible( true );
+	$ref->setValue( null, array() );
+
+	$GLOBALS['datos_elementor'] = $documentos;
+	$GLOBALS['es_singular']     = (bool) $singular;
+	$GLOBALS['id_consultado']   = (int) $singular;
+	$GLOBALS['encolados']       = array();
+
+	$GLOBALS['estilos'] = new CM_Cola();
+	foreach ( array_keys( $documentos ) as $id ) {
+		$GLOBALS['estilos']->queue[] = 'elementor-post-' . $id;
+	}
+
+	$GLOBALS['scripts'] = new CM_Cola();
+	$GLOBALS['scripts']->registered['cm-scroll'] = new CM_Script( array( 'cm-gsap' ) );
+
+	$GLOBALS['opciones']['caracool_motion_scroll'] = array( 'inercia' => $inercia, 'puntos' => 'no' );
+}
+
+function cm_deps() {
+	return $GLOBALS['scripts']->registered['cm-scroll']->deps;
+}
+
+function cm_datos( $efectos ) {
+	$piezas = array();
+	foreach ( (array) $efectos as $e ) {
+		$piezas[] = '{"id":"a1b2c3","elType":"container","settings":{"cm_efecto":"' . $e . '"},"elements":[]}';
+	}
+	return '[' . implode( ',', $piezas ) . ']';
+}
+
+cm_montar_pagina( array( 313 => cm_datos( array( 'entrada', 'entrada', 'marca' ) ) ), 'si', 313 );
+$m->imprimir_assets();
+comprueba( 'una página de solo entrada y marca no se lleva ScrollTrigger', ! in_array( 'cm-scrolltrigger', cm_deps(), true ), implode( ',', cm_deps() ) );
+comprueba( 'pero sí GSAP y Lenis', array( 'cm-gsap', 'cm-lenis' ) === cm_deps(), implode( ',', cm_deps() ) );
+
+cm_montar_pagina( array( 20110 => cm_datos( array( 'entrada', 'cortina' ) ) ), 'si', 20110 );
+$m->imprimir_assets();
+comprueba( 'con la caché de Elementor puesta, la cortina se detecta leyendo el documento', in_array( 'cm-scrolltrigger', cm_deps(), true ), implode( ',', cm_deps() ) );
+
+cm_montar_pagina( array( 20110 => cm_datos( array( 'crece' ) ) ), 'si', 20110 );
+$m->imprimir_assets();
+comprueba( 'y «la foto crece» también', in_array( 'cm-scrolltrigger', cm_deps(), true ), implode( ',', cm_deps() ) );
+
+// El pie o la cabecera son otro documento: su hoja de estilos está en la cola.
+cm_montar_pagina( array( 313 => cm_datos( array( 'entrada' ) ), 114 => cm_datos( array( 'parallax' ) ) ), 'si', 313 );
+$m->imprimir_assets();
+comprueba( 'un efecto de scroll en la cabecera o el pie también cuenta', in_array( 'cm-scrolltrigger', cm_deps(), true ), implode( ',', cm_deps() ) );
+
+cm_montar_pagina( array( 277 => cm_datos( array( 'no', 'no' ) ) ), 'si', 277 );
+$m->imprimir_assets();
+comprueba( 'un contenedor con el efecto en «ninguno» no cuenta como efecto', ! in_array( 'cm-scrolltrigger', cm_deps(), true ), implode( ',', cm_deps() ) );
+
+cm_montar_pagina( array( 277 => cm_datos( array( 'inventado' ) ) ), 'si', 277 );
+$m->imprimir_assets();
+comprueba( 'un efecto que aquí no consta carga ScrollTrigger por si acaso', in_array( 'cm-scrolltrigger', cm_deps(), true ), implode( ',', cm_deps() ) );
+
+cm_montar_pagina( array( 313 => cm_datos( array( 'entrada' ) ) ), 'no', 313 );
+$m->imprimir_assets();
+comprueba( 'sin inercia no viaja Lenis', array( 'cm-gsap' ) === cm_deps(), implode( ',', cm_deps() ) );
+
+cm_montar_pagina( array(), 'no', 0 );
+$m->imprimir_assets();
+comprueba( 'una página sin Elementor ni motor no recibe ni un byte', ! in_array( 'cm-scroll', $GLOBALS['encolados'], true ), implode( ',', $GLOBALS['encolados'] ) );
+
+cm_montar_pagina( array( 313 => cm_datos( array( 'entrada' ) ) ), 'no', 313 );
+$m->imprimir_assets();
+comprueba( 'una página con efectos sí recibe el JS aunque el motor esté apagado', in_array( 'cm-scroll', $GLOBALS['encolados'], true ) );
 
 echo "\n=== Pista para el primer lote ===\n";
 comprueba( 'lo que ya se ve al cargar espera a que la página termine', false !== strpos( $js, 'function cuandoAsiente(' ) && false !== strpos( $js, "window.addEventListener('load', asentar" ) );
