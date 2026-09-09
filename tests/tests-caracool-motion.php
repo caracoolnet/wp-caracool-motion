@@ -16,6 +16,8 @@ $GLOBALS['es_singular']     = false;
 $GLOBALS['id_consultado']   = 0;
 $GLOBALS['datos_elementor'] = array();
 $GLOBALS['encolados']       = array();
+$GLOBALS['menus']           = array();
+$GLOBALS['admin_page_hooks'] = array();
 
 define( 'ABSPATH', __DIR__ );
 define( 'MINUTE_IN_SECONDS', 60 );
@@ -43,7 +45,13 @@ function admin_url( $p = '' ) { return 'https://ejemplo.test/wp-admin/' . $p; }
 function plugin_dir_path( $f ) { return dirname( $f ) . '/'; }
 function plugin_dir_url( $f ) { return 'https://ejemplo.test/wp-content/plugins/caracool-motion/'; }
 function plugin_basename( $f ) { return 'caracool-motion/caracool-motion.php'; }
-function add_menu_page() {}
+function add_menu_page( $t = '', $m = '', $c = '', $slug = '', $cb = null, $icono = '', $pos = null ) {
+	$GLOBALS['admin_page_hooks'][ $slug ] = 'toplevel_page_' . $slug;
+	$GLOBALS['menus'][] = array( 'tipo' => 'padre', 'slug' => $slug, 'titulo' => $t, 'etiqueta' => $m, 'cb' => $cb, 'icono' => $icono );
+}
+function add_submenu_page( $padre, $t = '', $m = '', $c = '', $slug = '', $cb = null ) {
+	$GLOBALS['menus'][] = array( 'tipo' => 'hijo', 'padre' => $padre, 'slug' => $slug, 'titulo' => $t, 'etiqueta' => $m, 'cb' => $cb );
+}
 function wp_nonce_field( $a ) {}
 function wp_safe_redirect( $u ) {}
 function wp_die( $m ) {}
@@ -79,7 +87,7 @@ function sanitize_hex_color( $c ) { return preg_match( '/^#([A-Fa-f0-9]{3}){1,2}
 function get_attached_file( $id ) { return ''; }
 function get_post_mime_type( $id ) { return ''; }
 function wp_get_attachment_url( $id ) { return ''; }
-function wp_enqueue_media() {}
+function wp_enqueue_media() { $GLOBALS['encolados'][] = 'wp-media'; }
 function get_pages( $a = array() ) { return array(); }
 
 require_once dirname( __DIR__ ) . '/caracool-motion.php';
@@ -423,6 +431,72 @@ echo "\n=== Intro · catálogo ===\n";
 $as = Caracool_Motion_Intro::animaciones();
 comprueba( 'cinco animaciones de serie', 5 === count( $as ) && isset( $as['freno'], $as['asiento'], $as['respira'], $as['gota'], $as['sello'] ) );
 foreach ( $as as $k => $a ) { comprueba( "la animación '$k' tiene etiqueta y ayuda", ! empty( $a['etiqueta'] ) && ! empty( $a['ayuda'] ) ); }
+
+echo "\n=== Menú compartido de la casa ===\n";
+/*
+ * El plugin ya no pone su propia entrada de primer nivel: cuelga de «Caracool»,
+ * el menú padre que crea el archivo común `inc/caracool-menu.php`. Estas
+ * pruebas ejecutan el registro de verdad, con los mismos mocks que WordPress:
+ * `add_menu_page` apunta el hook del padre, igual que hace WordPress, para que
+ * la guarda de «si ya existe, no lo crees otra vez» se pueda comprobar.
+ */
+$GLOBALS['menus']            = array();
+$GLOBALS['admin_page_hooks'] = array();
+
+comprueba( 'el archivo común está en el plugin', file_exists( dirname( __DIR__ ) . '/inc/caracool-menu.php' ) );
+comprueba( 'el slug compartido está definido', defined( 'CARACOOL_MENU_SLUG' ) && 'caracool' === CARACOOL_MENU_SLUG );
+
+caracool_menu_padre();
+$padres = array_filter( $GLOBALS['menus'], function ( $m ) { return 'padre' === $m['tipo']; } );
+comprueba( 'crea el menú padre «Caracool»', 1 === count( $padres ) );
+caracool_menu_padre();
+$padres = array_filter( $GLOBALS['menus'], function ( $m ) { return 'padre' === $m['tipo']; } );
+comprueba( 'y no lo crea dos veces si ya está puesto por otro plugin', 1 === count( $padres ) );
+
+$padre = reset( $padres );
+comprueba( 'el padre usa el slug compartido', CARACOOL_MENU_SLUG === $padre['slug'] );
+comprueba( 'el icono es la C de la casa, incrustada', 0 === strpos( (string) $padre['icono'], 'data:image/svg+xml;base64,' ) );
+comprueba( 'el SVG del icono se decodifica y lleva un path', false !== strpos( (string) base64_decode( substr( $padre['icono'], strlen( 'data:image/svg+xml;base64,' ) ) ), '<path d="M39.23' ) );
+
+$mp = new Caracool_Motion();
+$mp->add_menu();
+$hijos = array_values( array_filter( $GLOBALS['menus'], function ( $m ) { return 'hijo' === $m['tipo']; } ) );
+comprueba( 'Motion se registra como submenú, no como menú propio', 1 === count( $hijos ) );
+comprueba( 'y cuelga del padre compartido', $hijos && CARACOOL_MENU_SLUG === $hijos[0]['padre'] );
+comprueba( 'el slug de la página no cambia, para no romper enlaces', $hijos && 'caracool-motion' === $hijos[0]['slug'], $hijos ? $hijos[0]['slug'] : '' );
+comprueba( 'la etiqueta corta es «Motion» (el padre ya dice Caracool)', $hijos && 'Motion' === $hijos[0]['etiqueta'] );
+comprueba( 'apunta a la página de ajustes de siempre', $hijos && is_array( $hijos[0]['cb'] ) && 'render_settings_page' === $hijos[0]['cb'][1] );
+
+$lista = $mp->presentarse( array() );
+comprueba( 'el plugin se presenta en la portada del menú', 1 === count( $lista ) && 'Motion' === $lista[0]['nombre'] );
+comprueba( 'y dice su versión y su página', CARACOOL_MOTION_VERSION === $lista[0]['version'] && 'caracool-motion' === $lista[0]['pagina'] );
+comprueba( 'con un resumen de qué hace', ! empty( $lista[0]['resumen'] ) );
+
+$registrado = false;
+foreach ( $GLOBALS['filtros'] as $f ) {
+	if ( 'caracool_plugins' === $f[0] ) { $registrado = true; }
+}
+comprueba( 'el filtro caracool_plugins está enganchado', $registrado );
+
+$prioridad_padre = null;
+foreach ( $GLOBALS['acciones'] as $a ) {
+	if ( 'admin_menu' === $a[0] && 'caracool_menu_padre' === $a[1] ) { $prioridad_padre = true; }
+}
+comprueba( 'el padre se engancha a admin_menu', (bool) $prioridad_padre );
+
+// El módulo Intro carga el selector de medios comprobando el hook de la
+// pantalla. Al pasar de menú padre a submenú, el prefijo cambia: tiene que
+// seguir reconociéndola.
+$mi_hook = new Caracool_Motion_Intro();
+foreach ( array( 'toplevel_page_caracool-motion' => true, 'caracool_page_caracool-motion' => true, 'edit.php' => false ) as $hook => $espera ) {
+	$GLOBALS['encolados'] = array();
+	$mi_hook->admin_assets( $hook );
+	$cargo = in_array( 'wp-media', $GLOBALS['encolados'], true );
+	comprueba(
+		$espera ? "el módulo Intro carga los medios con el hook '$hook'" : "y no los carga en otras pantallas ('$hook')",
+		$cargo === $espera
+	);
+}
 
 echo "\n=== Todos los hooks apuntan a algo que existe ===\n";
 $total = 0;
