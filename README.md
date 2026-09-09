@@ -2,7 +2,7 @@
 
 Movimiento para webs hechas con Elementor: scroll con inercia y transiciones de sección que se eligen **desde el propio panel de Elementor**, sin escribir código, sin CSS suelto en los bloques y sin depender de servicios externos.
 
-**Versión actual:** 0.6.1 · **Requiere:** WordPress 6.0+, Elementor 3.16+ (contenedores flexbox)
+**Versión actual:** 0.7.0 · **Requiere:** WordPress 6.0+, Elementor 3.16+ (contenedores flexbox)
 
 ---
 
@@ -22,7 +22,7 @@ Este plugin recoge todo eso en un sitio:
 ## Cómo se usa
 
 1. Instalar y activar.
-2. En **Caracool Motion** (menú lateral), una pestaña por módulo: Scroll, Botones, Cabecera, Intro. Un solo botón de guardar para todo.
+2. En **Caracool → Motion** (menú lateral, compartido con los demás plugins de la casa), una pestaña por módulo: Scroll, Botones, Cabecera, Intro. Un solo botón de guardar para todo.
 3. En Elementor, seleccionar un contenedor → pestaña **Estilo** → sección **Caracool Motion** → elegir efecto.
 
 Eso es todo. No hay clases que memorizar.

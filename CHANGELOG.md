@@ -6,6 +6,26 @@ tercer dígito es para lo que ya está publicado: republicar una tanda cerrada
 cuando hace falta que el actualizador de las webs se entere, o arreglar algo
 que se ha escapado en una versión que ya está instalada en algún sitio.
 
+## 0.7.0 (9 de septiembre de 2026)
+
+Los plugins de la casa dejan de repartirse la barra lateral de WordPress.
+
+- **Un solo menú «Caracool».** Motion, Carta, OneStep y Churra se cuelgan de un
+  mismo menú padre en vez de poner cada uno el suyo. Motion pasa a ser el
+  submenú **«Motion»**; la página de ajustes es la misma y **el slug no
+  cambia** (`caracool-motion`), así que ningún enlace guardado se rompe.
+- **Sin dependencia entre plugins.** Lo único que comparten es el acuerdo de
+  colgarse de un mismo slug: el primero que carga crea el padre y los demás se
+  lo encuentran hecho, en cualquier orden y con cualquier combinación
+  instalada. Cada uno sigue funcionando solo.
+- La portada del menú lista los plugins de la casa que hay puestos en la web,
+  con su versión y una línea de qué hace cada uno. Cada plugin se apunta por el
+  filtro `caracool_plugins`; el que no esté instalado no aparece.
+- El archivo `inc/caracool-menu.php` es **común a los cuatro plugins, byte a
+  byte**. Su fuente de verdad es `caracoolnet/wp-caracool-shared`: antes de
+  publicar una versión, se compara y se sustituye si no coincide.
+- El zip pasa a incluir `inc/`. Sin esa carpeta el plugin no arranca.
+
 ## 0.6.1 (8 de septiembre de 2026)
 
 Arreglo de la 0.6.0, que llegó a instalarse rota en porherencia.com.

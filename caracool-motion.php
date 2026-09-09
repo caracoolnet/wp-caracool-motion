@@ -3,7 +3,7 @@
  * Plugin Name:  Caracool Motion
  * Plugin URI:   https://github.com/caracoolnet/wp-caracool-motion
  * Description:  Movimiento para webs hechas con Elementor: scroll con inercia y transiciones de sección que se eligen desde el propio panel de Elementor, sin escribir código ni CSS suelto.
- * Version:      0.6.1
+ * Version:      0.7.0
  * Author:       Caracool
  * Author URI:   https://caracool.net
  * License:      GPL-2.0-or-later
@@ -40,11 +40,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'CARACOOL_MOTION_VERSION', '0.6.1' );
+define( 'CARACOOL_MOTION_VERSION', '0.7.0' );
 define( 'CARACOOL_MOTION_FILE', __FILE__ );
 define( 'CARACOOL_MOTION_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CARACOOL_MOTION_URL', plugin_dir_url( __FILE__ ) );
 define( 'CARACOOL_MOTION_REPO', 'caracoolnet/wp-caracool-motion' );
+
+/*
+ * Menú compartido de la casa. Archivo común a los plugins de Caracool, igual
+ * byte a byte en todos: se cuelgan de un mismo menú padre en vez de que cada
+ * uno ponga el suyo. No crea dependencia entre plugins; el primero que carga
+ * crea el padre y los demás se lo encuentran hecho.
+ */
+require_once CARACOOL_MOTION_DIR . 'inc/caracool-menu.php';
 
 /**
  * Versión de un recurso del plugin para la URL: la del plugin más la fecha
@@ -63,6 +71,7 @@ class Caracool_Motion {
 
 	public function __construct() {
 		add_action( 'admin_menu', array( $this, 'add_menu' ) );
+		add_filter( 'caracool_plugins', array( $this, 'presentarse' ) );
 		add_action( 'admin_post_caracool_motion_save', array( $this, 'save_settings' ), 10 );
 		add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'check_update' ) );
 		add_filter( 'plugins_api', array( $this, 'update_details' ), 20, 3 );
@@ -75,16 +84,34 @@ class Caracool_Motion {
 
 	// ── Menú y página de ajustes ────────────────────────────────────────
 
+	/**
+	 * Cuelga los ajustes del menú «Caracool».
+	 *
+	 * El slug de la página no cambia (`caracool-motion`), así que los enlaces
+	 * guardados, la redirección de guardado y la comprobación del hook en el
+	 * módulo Intro siguen valiendo. Lo que cambia es el prefijo del hook:
+	 * `toplevel_page_caracool-motion` pasa a `caracool_page_caracool-motion`.
+	 */
 	public function add_menu() {
-		add_menu_page(
+		add_submenu_page(
+			CARACOOL_MENU_SLUG,
 			'Caracool Motion',
-			'Caracool Motion',
+			'Motion',
 			'manage_options',
 			'caracool-motion',
-			array( $this, 'render_settings_page' ),
-			'dashicons-image-filter',
-			59
+			array( $this, 'render_settings_page' )
 		);
+	}
+
+	/** Se presenta en la portada del menú compartido. */
+	public function presentarse( $lista ) {
+		$lista[] = array(
+			'nombre'  => 'Motion',
+			'pagina'  => 'caracool-motion',
+			'version' => CARACOOL_MOTION_VERSION,
+			'resumen' => 'Scroll con inercia y transiciones de sección desde Elementor.',
+		);
+		return $lista;
 	}
 
 	public function save_settings() {
