@@ -2,7 +2,7 @@
 
 Movimiento para webs hechas con Elementor: scroll con inercia y transiciones de sección que se eligen **desde el propio panel de Elementor**, sin escribir código, sin CSS suelto en los bloques y sin depender de servicios externos.
 
-**Versión actual:** 0.7.0 · **Requiere:** WordPress 6.0+, Elementor 3.16+ (contenedores flexbox)
+**Versión actual:** 0.7.1 · **Requiere:** WordPress 6.0+, Elementor 3.16+ (contenedores flexbox)
 
 ---
 
@@ -38,7 +38,6 @@ Los botones van por otro camino: se encienden una vez para toda la web desde el 
 | **Entrada escalonada** | Las piezas del contenedor (cada texto, cada botón y, en una lista de precios, cada línea) suben y aparecen una detrás de otra, en orden de lectura. Da igual que el bloque sea más alto que la pantalla. | Cuándo entra, Velocidad |
 | **Parallax** | El contenido se desplaza más despacio que la página. | Velocidad |
 | **La marca se planta y el disco crece** | Para un logotipo SVG con una forma grande y una marca fuera de ella: la marca entra girando y se planta, la forma grande crece desde su centro. La coreografía de la intro, para un logotipo enorme de fondo. | Velocidad |
-| **Gira hasta plantarse** | El contenedor entra girando y creciendo un poco hasta quedarse quieto. Para una marca o un icono grande de fondo. | Velocidad |
 
 ### Botones
 

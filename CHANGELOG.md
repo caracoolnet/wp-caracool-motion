@@ -6,6 +6,22 @@ tercer dígito es para lo que ya está publicado: republicar una tanda cerrada
 cuando hace falta que el actualizador de las webs se entere, o arreglar algo
 que se ha escapado en una versión que ya está instalada en algún sitio.
 
+## 0.7.1 (9 de septiembre de 2026)
+
+Sincroniza el archivo común del menú, que se corrigió después de publicar la
+0.7.0.
+
+- **El icono de «Caracool» se salía de su caja en la barra lateral.** WordPress
+  dibuja los iconos del menú con `background-size: 20px auto`: fija el ancho y
+  deja la altura libre. Con el lienzo estrecho que llevaba el SVG (52 × 101) el
+  dibujo salía a 39 px de alto y el hueco mide 34, así que asomaba por arriba y
+  por abajo. El lienzo pasa a ser cuadrado y el trazo va centrado: WordPress lo
+  escala a 20 × 20 y cabe entero. Se ve algo más pequeño, pero sin recortes.
+- El cambio viene de `caracoolnet/wp-caracool-shared` y se ha copiado **tal
+  cual**, sin adaptar nada: es archivo común a los cuatro plugins de la casa.
+- Fuera de la tabla de efectos del README, **«gira hasta plantarse»**, que se
+  quitó del código en la 0.6.0 y se había quedado ahí escrito.
+
 ## 0.7.0 (9 de septiembre de 2026)
 
 Los plugins de la casa dejan de repartirse la barra lateral de WordPress.
