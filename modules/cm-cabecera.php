@@ -8,7 +8,7 @@
  *  Convierte la cabecera del Theme Builder de Elementor en una cabecera
  *  «inteligente»: fija y transparente sobre la primera pantalla, se
  *  esconde al bajar y reaparece al subir, ya con fondo sólido. Así las
- *  composiciones a pantalla completa quedan limpias y el botón de reservar
+ *  composiciones a pantalla completa quedan limpias y el botón principal
  *  sigue a un gesto de distancia.
  *
  *  1. Interruptor de sitio en el panel, con el umbral a partir del cual se
@@ -180,7 +180,7 @@ class Caracool_Motion_Cabecera {
 					<div class="cm-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M3 14h18M3 19h12"/></svg></div>
 					<h2>Cabecera</h2>
 				</div>
-				<p class="cm-card-desc">La cabecera del Maquetador de temas se queda fija y transparente sobre la primera pantalla, <strong>se esconde al bajar y reaparece al subir</strong>, ya con fondo sólido. Las composiciones a pantalla completa quedan limpias y el botón de reservar sigue a un gesto.</p>
+				<p class="cm-card-desc">La cabecera del Maquetador de temas se queda fija y transparente sobre la primera pantalla, <strong>se esconde al bajar y reaparece al subir</strong>, ya con fondo sólido. Las composiciones a pantalla completa quedan limpias y el botón principal sigue a un gesto.</p>
 
 				<div class="cm-campo">
 					<label for="cm_cabecera_activo">Cabecera inteligente</label>
