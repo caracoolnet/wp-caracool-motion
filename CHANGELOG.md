@@ -6,6 +6,13 @@ tercer dígito es para lo que ya está publicado: republicar una tanda cerrada
 cuando hace falta que el actualizador de las webs se entere, o arreglar algo
 que se ha escapado en una versión que ya está instalada en algún sitio.
 
+## 0.7.3 (17 de septiembre de 2026)
+
+Remate de la 0.7.2: quedaban dos frases de la web de cliente.
+
+- La ayuda del módulo Cabecera y el README ponían ejemplos sacados de esa web.
+  Ahora hablan del botón principal de la cabecera y de una sección larga.
+
 ## 0.7.2 (17 de septiembre de 2026)
 
 Solo textos. En el panel y en la documentación seguían nombres de la web de

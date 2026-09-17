@@ -2,7 +2,7 @@
 
 Movimiento para webs hechas con Elementor: scroll con inercia y transiciones de sección que se eligen **desde el propio panel de Elementor**, sin escribir código, sin CSS suelto en los bloques y sin depender de servicios externos.
 
-**Versión actual:** 0.7.2 · **Requiere:** WordPress 6.0+, Elementor 3.16+ (contenedores flexbox)
+**Versión actual:** 0.7.3 · **Requiere:** WordPress 6.0+, Elementor 3.16+ (contenedores flexbox)
 
 ---
 
@@ -64,7 +64,7 @@ Cuesta una capa por botón y una transición de `clip-path`, que va en la GPU. C
 
 La cabecera se maqueta como siempre en **Plantillas → Maquetador de temas**. El módulo no la dibuja: la mueve y la pinta.
 
-Con el interruptor encendido, la cabecera se queda **fija y transparente** sobre la primera pantalla; pasado el umbral, **se esconde al bajar y reaparece al subir**, ya con fondo sólido. Las composiciones a pantalla completa quedan limpias y el botón de reservar sigue a un gesto de distancia. Con el menú desplegable abierto no se esconde.
+Con el interruptor encendido, la cabecera se queda **fija y transparente** sobre la primera pantalla; pasado el umbral, **se esconde al bajar y reaparece al subir**, ya con fondo sólido. Las composiciones a pantalla completa quedan limpias y el botón principal sigue a un gesto de distancia. Con el menú desplegable abierto no se esconde.
 
 | Ajuste | Qué hace |
 |---|---|
@@ -97,7 +97,7 @@ La sábana y el logotipo se imprimen **con el HTML**, en `wp_body_open`, con su 
 ### Reglas de uso aprendidas en producción
 
 - **Con cortina, el contenido no se anima.** La cortina ya es la animación. Si además entra el texto, se ve colocado, luego tapado y luego moviéndose otra vez. El plugin no aplica entradas dentro de un contenedor con cortina.
-- **La entrada va por piezas, no por bloques.** Un umbral fijo sobre el contenedor (que ocupe el 35 % de la pantalla) parece razonable hasta que el bloque mide tres pantallas: entonces no llega nunca a ese porcentaje y el contenido se queda invisible. Pasó en la carta en móvil.
+- **La entrada va por piezas, no por bloques.** Un umbral fijo sobre el contenedor (que ocupe el 35 % de la pantalla) parece razonable hasta que el bloque mide tres pantallas: entonces no llega nunca a ese porcentaje y el contenido se queda invisible. Pasó con una sección larga en móvil.
 - **Atar la entrada al scroll no siempre luce.** Con listas largas, unos elementos entran y otros se quedan a medias mientras se baja. Por eso de fábrica la coreografía se lanza entera al llegar al bloque, y lo de pieza a pieza es una opción.
 - **En iOS, la ventana no mide lo que mide el panel.** `window.innerHeight` sube y baja con la barra de Safari; `100svh` no. Lo que tiene que encajar dentro de una caja se mide contra esa caja (`clientWidth` / `clientHeight`), nunca contra la ventana.
 - **Abajo del todo, en un móvil, no hay sitio.** La barra del navegador aparece y desaparece justo ahí. Lo que tenga que verse siempre —una línea de avance— va a un lateral. Y si algo puede ser ancho u alto según el dispositivo, se anima un número y que el CSS decida: así girar el teléfono no obliga a recargar.
