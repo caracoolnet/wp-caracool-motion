@@ -19,9 +19,9 @@
  *     la oculta antes del primer pintado si el visitante ya la vio.
  *
  * CÓMO SABE QUÉ ES CADA PIEZA DEL LOGOTIPO
- *  No lo sabe: lo deduce. La forma con más área es el «disco»; las formas
- *  cuyo centro cae fuera de ese disco son la «marca» (el aspa); el resto son
- *  las letras. Vale para cualquier logotipo con una forma grande y detalles.
+ *  No lo sabe: lo deduce. La forma con más área es la principal (el «disco»
+ *  en el código); las formas cuyo centro cae fuera de ella son la «marca»; el
+ *  resto son las letras. Vale para cualquier logotipo con una forma grande y detalles.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -52,10 +52,10 @@ class Caracool_Motion_Intro {
 		return apply_filters(
 			'caracool_motion_animaciones_intro',
 			array(
-				'freno'   => array( 'etiqueta' => 'Del aspa al disco · freno largo', 'ayuda' => 'La marca se planta en el centro; el disco crece de golpe y se pasa el resto del tiempo frenando. La elegida en Por Herencia.' ),
-				'asiento' => array( 'etiqueta' => 'Del aspa al disco · con asiento', 'ayuda' => 'Igual, pero el disco se pasa un 3 % y vuelve, como si pesara.' ),
-				'respira' => array( 'etiqueta' => 'Del aspa al disco · respira', 'ayuda' => 'El disco nace estirándose un poco y al final hace una respiración lenta.' ),
-				'gota'    => array( 'etiqueta' => 'Se derrama desde la marca', 'ayuda' => 'La marca aparece en su sitio y el disco sale de ella hacia el centro.' ),
+				'freno'   => array( 'etiqueta' => 'La marca se planta · freno largo', 'ayuda' => 'La marca se planta en el centro; la forma principal crece de golpe y se pasa el resto del tiempo frenando.' ),
+				'asiento' => array( 'etiqueta' => 'La marca se planta · con asiento', 'ayuda' => 'Igual, pero la forma principal se pasa un 3 % y vuelve, como si pesara.' ),
+				'respira' => array( 'etiqueta' => 'La marca se planta · respira', 'ayuda' => 'La forma principal nace estirándose un poco y al final hace una respiración lenta.' ),
+				'gota'    => array( 'etiqueta' => 'Se derrama desde la marca', 'ayuda' => 'La marca aparece en su sitio y la forma principal sale de ella hacia el centro.' ),
 				'sello'   => array( 'etiqueta' => 'Sello', 'ayuda' => 'Todo el logotipo entra de una vez y se asienta. La más corta.' ),
 			)
 		);
@@ -346,7 +346,7 @@ class Caracool_Motion_Intro {
 						?>
 						<div class="cm-lista">
 							<?php if ( ! $otras ) : ?>
-								<span class="cm-hint" style="margin:0">Todavía no hay más páginas publicadas. Cuando existan Carta, Historia o Tarjeta regalo, aparecerán aquí.</span>
+								<span class="cm-hint" style="margin:0">Todavía no hay más páginas publicadas. Cuando las haya, aparecerán aquí.</span>
 							<?php endif; ?>
 							<?php foreach ( $otras as $pg ) : ?>
 								<label class="cm-check"><input type="checkbox" name="cm_intro[paginas][]" value="<?php echo (int) $pg->ID; ?>" <?php checked( in_array( (int) $pg->ID, $c['paginas'], true ) ); ?>> <?php echo esc_html( $pg->post_title ? $pg->post_title : '(sin título)' ); ?></label>
@@ -365,7 +365,7 @@ class Caracool_Motion_Intro {
 						</div>
 						<button type="button" class="button" id="cm_intro_elegir">Elegir de la biblioteca</button>
 						<button type="button" class="button" id="cm_intro_quitar" <?php echo $logo_url ? '' : 'style="display:none"'; ?>>Quitar</button>
-						<span class="cm-hint">Tiene que ser un <strong>SVG</strong>: se incrusta en la página para poder animar cada trazo. La forma más grande se toma como disco; las que quedan fuera de él, como marca; el resto, como letras.</span>
+						<span class="cm-hint">Tiene que ser un <strong>SVG</strong>: se incrusta en la página para poder animar cada trazo. La forma más grande se toma como principal; las que quedan fuera de ella, como marca; el resto, como letras.</span>
 					</div>
 				</div>
 

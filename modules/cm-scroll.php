@@ -98,8 +98,8 @@ class Caracool_Motion_Scroll {
 					'scroll'   => true,
 				),
 				'marca'    => array(
-					'etiqueta' => 'La marca se planta y el disco crece',
-					'ayuda'    => 'Para un logotipo en SVG con una forma grande y una marca fuera de ella (un aspa, un punto): la marca entra girando y se planta, y la forma grande crece desde su centro. Es la misma coreografía que la intro, pensada para un logotipo enorme de fondo que se sale del contenedor.',
+					'etiqueta' => 'La marca se planta y la forma crece',
+					'ayuda'    => 'Para un logotipo en SVG con una forma grande y una marca fuera de ella (un símbolo, un punto): la marca entra girando y se planta, y la forma grande crece desde su centro. Es la misma coreografía que la intro, pensada para un logotipo enorme de fondo que se sale del contenedor.',
 					'opciones' => array( 'velocidad' ),
 					'scroll'   => false,
 				),
