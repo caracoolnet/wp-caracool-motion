@@ -6,6 +6,21 @@ tercer dígito es para lo que ya está publicado: republicar una tanda cerrada
 cuando hace falta que el actualizador de las webs se entere, o arreglar algo
 que se ha escapado en una versión que ya está instalada en algún sitio.
 
+## 0.7.2 (17 de septiembre de 2026)
+
+Solo textos. En el panel y en la documentación seguían nombres de la web de
+cliente donde se estrenó el plugin.
+
+- Las animaciones de la intro (freno largo, con asiento y respira) pasan a
+  llamarse **«La marca se planta»**, y el efecto de sección equivalente,
+  **«la marca se planta y la forma crece»**. Las ayudas hablan de
+  «la forma principal» en vez de nombrar la del logotipo. Las claves internas
+  no cambian, así que los ajustes guardados en cualquier web siguen valiendo.
+- Las ayudas del panel ya no citan páginas ni webs de clientes.
+- El CHANGELOG y el README cuentan lo mismo sin nombrar la web donde se probó
+  cada cosa.
+- En PHP y JavaScript solo cambian textos y comentarios.
+
 ## 0.7.1 (9 de septiembre de 2026)
 
 Sincroniza el archivo común del menú, que se corrigió después de publicar la
@@ -44,14 +59,14 @@ Los plugins de la casa dejan de repartirse la barra lateral de WordPress.
 
 ## 0.6.1 (8 de septiembre de 2026)
 
-Arreglo de la 0.6.0, que llegó a instalarse rota en porherencia.com.
+Arreglo de la 0.6.0, que llegó a instalarse rota en una web.
 
 - **La caché de Elementor dejaba páginas sin ScrollTrigger.** La 0.6.0 decidía
   qué librerías cargar por los efectos que había visto pintar. Elementor guarda
   el HTML ya pintado de cada elemento y, cuando lo sirve de ahí, no vuelve a
   pasar por el plugin: la página llevaba su cortina en el HTML y aquí no
-  constaba ningún efecto, así que ScrollTrigger no viajaba. En la home y en el
-  menú degustación la cortina y «la foto crece» se quedaron sin hacer nada —con
+  constaba ningún efecto, así que ScrollTrigger no viajaba. En las páginas con
+  cortina o con «la foto crece», los dos efectos se quedaron sin hacer nada —con
   el hueco de la sección de 260 vh— y la consola avisando. Duró lo que tardamos
   en comprobarlo.
 - **Ahora se mira el documento, no el momento de pintar.** El plugin lee los
@@ -77,13 +92,13 @@ aportaba.
   IntersectionObserver y no lo necesitan. Hasta ahora se cargaba en todas las
   páginas por igual. Ahora el catálogo declara cuáles van atados al scroll
   (`'scroll' => true`), el módulo apunta qué efectos ha inyectado de verdad y
-  encola ScrollTrigger solo si alguno lo pide. En porherencia.com eso son
-  **43 KB menos en ocho de las doce páginas**: todas menos la portada y el menú
-  degustación, que son las únicas con cortina o con la foto que crece.
+  encola ScrollTrigger solo si alguno lo pide. En la primera web donde
+  se instaló eso fueron **43 KB menos en ocho de sus doce páginas**: todas menos
+  las dos que llevaban cortina o la foto que crece.
 - **Lenis solo con la inercia activada.** Se registraba como dependencia fija
   aunque el motor estuviera apagado. Ahora se añade solo cuando toca.
 - **Fuera «gira hasta plantarse».** Hacía casi lo mismo que «la marca se planta
-  y el disco crece», que es la buena, y no estaba puesto en ninguna página.
+  y la forma crece», que es la buena, y no estaba puesto en ninguna página.
   Quedan cinco efectos de sección.
 - Un efecto de scroll que llegue por filtro sin declararse como tal cuenta como
   que lo necesita: más vale cargar de más que romperlo. Y si aun así falta
@@ -96,7 +111,7 @@ Misma tanda que la 0.5.0: sube el número solo para que las webs se enteren.
 La 0.5.0 se publicó el 5 de septiembre con el arreglo del hueco por movimiento
 reducido, pero las webs que ya tenían instalada una 0.5.0 anterior no lo
 recibían: el actualizador compara números y los dos eran iguales, así que no
-aparecía el aviso. Porherencia.com seguía con el archivo del 4 de septiembre.
+aparecía el aviso. Una de ellas seguía con el archivo del 4 de septiembre.
 
 - Nada nuevo en el código respecto a la 0.5.0 publicada. Lo que cambia es el
   número, para que el aviso de actualización llegue a las webs instaladas.
@@ -108,7 +123,7 @@ entrada escalonada pasa a animar piezas en vez de bloques.
 
 - **Con movimiento reducido, «la foto crece» ya no deja un hueco.** El efecto
   necesita una sección de varias pantallas para tener recorrido de scroll —en
-  la home son 260 vh—, y esa altura la escribe Elementor. Con el movimiento
+  una portada llegaron a ser 260 vh—, y esa altura la escribe Elementor. Con el movimiento
   reducido activado el JavaScript se retira entero, así que la sección se
   quedaba con su altura de recorrido y sin nada dentro: casi tres pantallas de
   vacío después de la foto. Ahora la hoja de estilos devuelve esa sección a la
@@ -121,8 +136,8 @@ entrada escalonada pasa a animar piezas en vez de bloques.
 - Cada pieza **se activa cuando le toca a ella**, y las que aparecen a la vez
   entran escalonadas en el mismo lote. Con el umbral anterior (el contenedor
   tenía que ocupar el 35 % de la pantalla) un bloque más alto que tres
-  pantallas no llegaba a revelarse nunca: en móvil la carta se quedaba
-  invisible. Ya no depende de la altura del contenedor.
+  pantallas no llegaba a revelarse nunca: en móvil, una sección larga se
+  quedaba invisible. Ya no depende de la altura del contenedor.
 - Nueva opción **Cuándo entra**: «Todo al llegar al bloque» (de fábrica), que
   lanza la coreografía entera en cuanto la sección aparece, y «Cada pieza al
   llegar a ella», que ata la entrada al scroll. La primera evita que ciertos
@@ -162,8 +177,8 @@ entrada escalonada pasa a animar piezas en vez de bloques.
 - **Lo pegado al final de la página también entra.** La línea de entrada está
   un 12 % por encima del borde inferior de la pantalla, y un contenedor que
   termina justo al final del documento nunca llega a cruzarla: con el scroll al
-  tope se queda por debajo. La barra baja del pie de Por Herencia —los sellos,
-  el aviso legal y el «hecho con ♥»— no aparecía nunca. Ahora, además de la
+  tope se queda por debajo. La barra baja de un pie de página —el aviso
+  legal y el «hecho con ♥»— no aparecía nunca. Ahora, además de la
   línea, se mira si el elemento se ve entero: lo que ocurra primero lo hace
   entrar. Con esto entran también los pies de las páginas tan cortas que caben
   en una pantalla.
@@ -198,11 +213,11 @@ Módulo de intro.
   logotipo se anima en el centro y la sábana sube (o se recorta de abajo
   arriba) dejando ver el resto. Solo la primera vez, recordado N días.
 - Cinco animaciones del logotipo, ampliables por filtro
-  (`caracool_motion_animaciones_intro`): del aspa al disco en tres tempos
+  (`caracool_motion_animaciones_intro`): la marca se planta en tres tempos
   (freno largo, con asiento, respira), se derrama, y sello.
 - **El logotipo se elige de la biblioteca** (SVG) y se incrusta en la página.
-  Las piezas se deducen: la forma más grande es el disco, las que quedan fuera
-  son la marca, el resto letras. Sirve para cualquier logotipo parecido.
+  Las piezas se deducen: la forma más grande es la principal, las que quedan
+  fuera son la marca, el resto letras. Sirve para cualquier logotipo parecido.
 - Color de la sábana entre los colores globales del Kit.
 - Dónde: solo inicio o todas las páginas, y **por página** desde los Ajustes
   de página de Elementor (según el sitio / mostrar / no mostrar).
@@ -222,8 +237,8 @@ Módulo de intro.
   interruptor, color y grosor. El velo y la línea usan el **selector de color
   nativo de Elementor** (globales del Kit o cualquier color): Elementor escribe
   la variable CSS en el contenedor y el plugin solo la lee.
-- Efecto de sección **la marca se planta y el disco crece**: la coreografía de la
-  intro aplicada a un logotipo enorme de fondo (el aspa y el disco del pie).
+- Efecto de sección **la marca se planta y la forma crece**: la coreografía de la
+  intro aplicada a un logotipo enorme de fondo.
 - Efecto de sección **gira hasta plantarse**, para una marca o icono grande de fondo (nació con el pie de página).
 - Color de los puntos de navegación elegible entre los globales del Kit.
 - La cortina lateral pierde el filo de color Énfasis que llevaba en el borde:

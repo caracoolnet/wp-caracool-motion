@@ -2,7 +2,7 @@
 
 Movimiento para webs hechas con Elementor: scroll con inercia y transiciones de sección que se eligen **desde el propio panel de Elementor**, sin escribir código, sin CSS suelto en los bloques y sin depender de servicios externos.
 
-**Versión actual:** 0.7.1 · **Requiere:** WordPress 6.0+, Elementor 3.16+ (contenedores flexbox)
+**Versión actual:** 0.7.2 · **Requiere:** WordPress 6.0+, Elementor 3.16+ (contenedores flexbox)
 
 ---
 
@@ -37,7 +37,7 @@ Los botones van por otro camino: se encienden una vez para toda la web desde el 
 | **La foto crece** | La sección se queda fija mientras su primera imagen crece hasta ocupar la pantalla. El resto del contenido aparece encima al final, con una línea de progreso abajo. Si ese contenido va en un contenedor hermano de la imagen, el contenedor pasa a ocupar la pantalla sobre la foto y su padding, justificación y alineación mandan, como en cualquier sección de Elementor. Opcionalmente, un **velo** entre la foto y el texto que entra con el texto. El velo y la línea usan el **selector de color nativo de Elementor** (globales del Kit o cualquier color); la línea se puede apagar y se le da grosor. | Velocidad, color del velo, opacidad del velo, línea sí/no, color de la línea, grosor |
 | **Entrada escalonada** | Las piezas del contenedor (cada texto, cada botón y, en una lista de precios, cada línea) suben y aparecen una detrás de otra, en orden de lectura. Da igual que el bloque sea más alto que la pantalla. | Cuándo entra, Velocidad |
 | **Parallax** | El contenido se desplaza más despacio que la página. | Velocidad |
-| **La marca se planta y el disco crece** | Para un logotipo SVG con una forma grande y una marca fuera de ella: la marca entra girando y se planta, la forma grande crece desde su centro. La coreografía de la intro, para un logotipo enorme de fondo. | Velocidad |
+| **La marca se planta y la forma crece** | Para un logotipo SVG con una forma grande y una marca fuera de ella: la marca entra girando y se planta, la forma grande crece desde su centro. La coreografía de la intro, para un logotipo enorme de fondo. | Velocidad |
 
 ### Botones
 
@@ -85,12 +85,12 @@ Una sábana del color de la casa cubre la página, el logotipo se anima en el ce
 | **Logotipo** | Un SVG de la biblioteca. Se incrusta en la página para animar cada trazo. |
 | **Tamaño del logotipo** | Ancho en píxeles, en escritorio y en móvil. |
 | **Color de la sábana** | Un color global del Kit. |
-| **Animación** | Del aspa al disco (freno largo, con asiento, respira), se derrama, sello. |
+| **Animación** | La marca se planta (freno largo, con asiento, respira), se derrama, sello. |
 | **Salida** | Sube como una sábana, o se recorta de abajo arriba. |
 | **Tempo** | Multiplica la duración. Al 100 % dura unos 3,5 s. |
 | **Recordar durante** | Días hasta volver a mostrarla. Con 0 se ve siempre (solo para ajustar). |
 
-El módulo **no conoce el logotipo**: deduce que la forma con más área es el disco, que las formas cuyo centro cae fuera de él son la marca, y que el resto son letras (las de menos de un 60 % de la altura, letras pequeñas). Un logotipo sin marca fuera del disco cae en «sello».
+El módulo **no conoce el logotipo**: deduce que la forma con más área es la principal, que las formas cuyo centro cae fuera de ella son la marca, y que el resto son letras (las de menos de un 60 % de la altura, letras pequeñas). Un logotipo sin marca fuera de la forma principal cae en «sello».
 
 La sábana y el logotipo se imprimen **con el HTML**, en `wp_body_open`, con su CSS crítico en `wp_head`: si se pintaran desde JavaScript, el hero se vería un instante antes. Un script en línea la quita antes del primer pintado cuando ya se ha visto. Al terminar emite `cm:intro:fin`, y los efectos de sección esperan a ese momento para no animarse a oscuras.
 
