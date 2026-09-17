@@ -4,8 +4,8 @@
  * La sábana y el logotipo ya están en el HTML (los imprime PHP en
  * wp_body_open). Este archivo solo los mueve:
  *
- *   1. Deduce las piezas del logotipo: la forma con más área es el disco,
- *      las que quedan fuera de él son la marca (el aspa), el resto letras.
+ *   1. Deduce las piezas del logotipo: la forma con más área es la principal
+ *      (disco), las que quedan fuera de ella son la marca, el resto letras.
  *   2. Anima el logotipo con la variante elegida en el panel.
  *   3. Saca la sábana (sube, o se recorta de abajo arriba).
  *   4. Recuerda que se ha visto, libera el scroll y avisa al resto de
@@ -162,7 +162,7 @@
 
 		var fn = V[ANIMACION] || V.freno;
 		if (!p.marca.length && (ANIMACION !== 'sello')) {
-			// Sin marca fuera del disco no hay «aspa»: la variante se degrada al sello.
+			// Sin marca fuera de la forma principal no hay nada que plantar: la variante se degrada al sello.
 			fn = V.sello;
 		}
 

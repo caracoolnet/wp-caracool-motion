@@ -517,9 +517,10 @@
 		c.alLlegar(el, function () { entrar(piezas, true); });
 	});
 
-	/* La marca se planta y el disco crece: la coreografía de la intro, para un
+	/* La marca se planta y la forma crece: la coreografía de la intro, para un
 	   logotipo enorme de fondo. Deduce las piezas igual que el módulo Intro:
-	   la forma con más área es el disco; las que caen fuera de él, la marca. */
+	   la forma con más área es la principal (disco); las que caen fuera de ella,
+	   la marca. */
 	CM.registrar('marca', function (el, op, c) {
 		var svg = el.querySelector('svg');
 		if (!svg) { return; }
