@@ -1,0 +1,52 @@
+/*!
+ * Caracool Motion — Botones de cristal
+ * data-cm-boton="cristal" | "cristal-tinte" en el widget Botón.
+ * El atributo va tres veces y la clase dos para ganar al Kit y al propio
+ * widget (Elementor pinta el fondo con cuatro clases:
+ * .elementor-N .elementor-element.elementor-element-ID .elementor-button).
+ * El color del texto no se toca: es el que tenga el botón en Elementor.
+ */
+[data-cm-boton^="cristal"][data-cm-boton^="cristal"][data-cm-boton^="cristal"] .elementor-button.elementor-button{
+	--cm-h:var(--cm-cristal-halo,var(--e-global-color-primary,#888));
+	position:relative;isolation:isolate;border-color:transparent;
+	background-image:none;background-color:rgba(255,255,255,.2);
+	-webkit-backdrop-filter:blur(18px) saturate(150%);backdrop-filter:blur(18px) saturate(150%);
+	box-shadow:0 0 0 1px rgba(255,255,255,.12),0 10px 40px -6px color-mix(in srgb,var(--cm-h) 45%,transparent);
+	transition:box-shadow .5s ease,background-color .4s ease,transform .4s cubic-bezier(.2,.8,.2,1)}
+[data-cm-boton="cristal-tinte"][data-cm-boton="cristal-tinte"][data-cm-boton="cristal-tinte"] .elementor-button.elementor-button{
+	background-color:color-mix(in srgb,var(--cm-cristal-tinte,var(--e-global-color-secondary,#333)) 72%,transparent)}
+
+/* filo de luz de 1 px, más brillante arriba */
+[data-cm-boton^="cristal"] .elementor-button::after{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;
+	background:linear-gradient(160deg,rgba(255,255,255,.85),rgba(255,255,255,.2) 45%,rgba(255,255,255,.45));
+	-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
+	mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
+[data-cm-boton="cristal-tinte"] .elementor-button::after{background:linear-gradient(160deg,rgba(255,255,255,.5),rgba(255,255,255,.06) 45%,rgba(255,255,255,.22))}
+
+/* luz suave que sigue al cursor (la coloca cm-cristal.js) */
+[data-cm-boton^="cristal"] .elementor-button::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;opacity:0;
+	background:radial-gradient(120px circle at var(--cm-x,50%) var(--cm-y,50%),rgba(255,255,255,.35),rgba(255,255,255,0) 70%);transition:opacity .4s}
+
+[data-cm-boton^="cristal"][data-cm-boton^="cristal"][data-cm-boton^="cristal"] .elementor-button.elementor-button:hover,
+[data-cm-boton^="cristal"][data-cm-boton^="cristal"][data-cm-boton^="cristal"] .elementor-button.elementor-button:focus-visible{
+	background-color:rgba(255,255,255,.3);transform:translateY(-1px);
+	box-shadow:0 0 0 1px rgba(255,255,255,.2),0 0 28px 2px color-mix(in srgb,var(--cm-h) 55%,transparent),0 14px 44px -6px color-mix(in srgb,var(--cm-h) 60%,transparent)}
+[data-cm-boton="cristal-tinte"][data-cm-boton="cristal-tinte"][data-cm-boton="cristal-tinte"] .elementor-button.elementor-button:hover,
+[data-cm-boton="cristal-tinte"][data-cm-boton="cristal-tinte"][data-cm-boton="cristal-tinte"] .elementor-button.elementor-button:focus-visible{
+	background-color:color-mix(in srgb,var(--cm-cristal-tinte,var(--e-global-color-secondary,#333)) 84%,transparent)}
+[data-cm-boton^="cristal"] .elementor-button:hover::before{opacity:1}
+
+/* sin desenfoque en el navegador, o con «reducir transparencia»: sólido */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+	[data-cm-boton="cristal"][data-cm-boton="cristal"][data-cm-boton="cristal"] .elementor-button.elementor-button{background-color:rgba(255,255,255,.9)}
+	[data-cm-boton="cristal-tinte"][data-cm-boton="cristal-tinte"][data-cm-boton="cristal-tinte"] .elementor-button.elementor-button{background-color:var(--cm-cristal-tinte,var(--e-global-color-secondary,#333))}
+}
+@media (prefers-reduced-transparency:reduce){
+	[data-cm-boton^="cristal"][data-cm-boton^="cristal"][data-cm-boton^="cristal"] .elementor-button.elementor-button{-webkit-backdrop-filter:none;backdrop-filter:none}
+	[data-cm-boton="cristal"][data-cm-boton="cristal"][data-cm-boton="cristal"] .elementor-button.elementor-button{background-color:rgba(255,255,255,.9)}
+	[data-cm-boton="cristal-tinte"][data-cm-boton="cristal-tinte"][data-cm-boton="cristal-tinte"] .elementor-button.elementor-button{background-color:var(--cm-cristal-tinte,var(--e-global-color-secondary,#333))}
+}
+@media (prefers-reduced-motion:reduce){
+	[data-cm-boton^="cristal"][data-cm-boton^="cristal"][data-cm-boton^="cristal"] .elementor-button.elementor-button{transition:none}
+	[data-cm-boton^="cristal"][data-cm-boton^="cristal"][data-cm-boton^="cristal"] .elementor-button.elementor-button:hover{transform:none}
+}

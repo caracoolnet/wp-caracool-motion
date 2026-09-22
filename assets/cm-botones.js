@@ -68,7 +68,7 @@
 		if (btn.dataset.cmBotonListo === '1') { return; }
 		// El ajuste "Sin animación" viaja en el envoltorio del widget, no en el <a>.
 		if (btn.dataset.cmBoton === 'no') { return; }
-		if (btn.closest && btn.closest('[data-cm-boton="no"]')) { return; }
+		if (btn.closest && btn.closest('[data-cm-boton="no"], [data-cm-boton^="cristal"]')) { return; }
 
 		var cs = window.getComputedStyle(btn);
 		var fondo = cs.backgroundColor;
