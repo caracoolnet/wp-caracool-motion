@@ -545,14 +545,26 @@
 		});
 	});
 
-	/* Parallax del contenido. */
+	/* Parallax del contenido. Se mueve lo de dentro, nunca el contenedor:
+	   si se movía el contenedor entero (pasa con los de ancho completo, que
+	   no tienen .e-con-inner), su fondo se despegaba de los vecinos y
+	   asomaba el fondo de la página entre dos bloques. El contenedor recorta
+	   lo que se sale, así el contenido no pisa al bloque de al lado. */
 	CM.registrar('parallax', function (el, op, c) {
 		if (window.innerWidth < 861) { return; }
-		var interior = el.querySelector(':scope > .e-con-inner') || el;
+		var interior = el.querySelector(':scope > .e-con-inner');
+		var piezas = interior ? [interior] : Array.prototype.filter.call(el.children, function (n) {
+			return n.classList.contains('e-con') || n.classList.contains('elementor-element');
+		});
+		if (!piezas.length) { return; }
 		var v = { lenta: 4, media: 8, rapida: 14 }[op.velocidad] || 8;
-		c.gsap.fromTo(interior, { yPercent: -v }, {
-			yPercent: v, ease: 'none',
-			scrollTrigger: { trigger: el, start: 'top bottom', end: 'bottom top', scrub: true }
+		// Recorrido en píxeles, relativo al alto del contenedor: con varias
+		// piezas de alturas distintas, yPercent movería cada una a su ritmo.
+		var recorrido = function () { return el.offsetHeight * v / 200; };
+		el.style.overflow = 'clip';
+		c.gsap.fromTo(piezas, { y: function () { return -recorrido(); } }, {
+			y: function () { return recorrido(); }, ease: 'none',
+			scrollTrigger: { trigger: el, start: 'top bottom', end: 'bottom top', scrub: true, invalidateOnRefresh: true }
 		});
 	});
 
