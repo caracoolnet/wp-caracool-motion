@@ -46,13 +46,86 @@
 	box-shadow: none;
 }
 
+/* Cristal: el color elegido al 55 % con desenfoque detrás, como los botones
+   de cristal. El fondo va en una capa aparte (::before) para que el
+   backdrop-filter no cambie el contexto de los menús desplegables fijos. */
+.cm-cabecera--cristal.cm-cabecera--solida {
+	background-color: transparent;
+}
+.cm-cabecera--cristal::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	pointer-events: none;
+	opacity: 0;
+	transition: opacity .35s ease;
+	background-color: color-mix(in srgb, var(--cm-cabecera-fondo) 55%, transparent);
+	-webkit-backdrop-filter: blur(18px) saturate(150%);
+	backdrop-filter: blur(18px) saturate(150%);
+	box-shadow: 0 12px 40px -18px color-mix(in srgb, var(--e-global-color-primary, #888) 55%, transparent);
+}
+.cm-cabecera--cristal.cm-cabecera--solida::before {
+	opacity: 1;
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+	.cm-cabecera--cristal::before { background-color: var(--cm-cabecera-fondo); }
+}
+@media (prefers-reduced-transparency: reduce) {
+	.cm-cabecera--cristal::before { background-color: var(--cm-cabecera-fondo); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+
 /* Con el menú desplegable abierto no se esconde nunca. */
 .cm-cabecera--menu-abierto {
 	transform: none;
 }
 
+/* Píldora de cristal en el menú: sustituye al puntero de Elementor
+   (subrayado, marco…). Cristal claro, como los botones de cristal. */
+.cm-menu-pildora {
+	position: relative;
+}
+.cm-menu-pildora > li {
+	position: relative;
+	z-index: 1;
+}
+.cm-menu-pildora > li > a::before,
+.cm-menu-pildora > li > a::after {
+	display: none !important;
+}
+.cm-pildora {
+	position: absolute;
+	top: 0;
+	left: 0;
+	z-index: 0;
+	border-radius: 999px;
+	pointer-events: none;
+	opacity: 0;
+	background-color: rgba(255, 255, 255, .5);
+	border: 1px solid rgba(255, 255, 255, .75);
+	box-shadow: 0 6px 18px -8px color-mix(in srgb, var(--e-global-color-text, #000) 40%, transparent), inset 0 1px 0 rgba(255, 255, 255, .9);
+	-webkit-backdrop-filter: blur(10px);
+	backdrop-filter: blur(10px);
+	transition:
+		transform .55s cubic-bezier(.3, 1.35, .45, 1),
+		width .55s cubic-bezier(.3, 1.35, .45, 1),
+		height .55s cubic-bezier(.3, 1.35, .45, 1),
+		opacity .3s ease;
+}
+.cm-pildora--visible {
+	opacity: 1;
+}
+.cm-pildora--quieta {
+	transition: none;
+}
+@media (prefers-reduced-transparency: reduce) {
+	.cm-pildora { background-color: rgba(255, 255, 255, .85); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-	.cm-cabecera {
+	.cm-cabecera,
+	.cm-cabecera--cristal::before,
+	.cm-pildora {
 		transition: none;
 	}
 }
