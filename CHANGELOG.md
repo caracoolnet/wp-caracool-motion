@@ -6,6 +6,13 @@ tercer dígito es para lo que ya está publicado: republicar una tanda cerrada
 cuando hace falta que el actualizador de las webs se entere, o arreglar algo
 que se ha escapado en una versión que ya está instalada en algún sitio.
 
+## 0.10.1 (22 de septiembre de 2026)
+
+Arreglo del parallax.
+
+- En los contenedores de ancho completo (sin `.e-con-inner`) el parallax movía el contenedor entero, con su fondo, y entre ese bloque y el de al lado asomaba una franja del fondo de la página. Ahora se mueve solo lo de dentro, el contenedor recorta lo que se sale y el fondo se queda en su sitio.
+- El recorrido va en píxeles relativos al alto del contenedor, para que todas las piezas se muevan al mismo ritmo.
+
 ## 0.10.0 (22 de septiembre de 2026)
 
 Dos ajustes nuevos en la cabecera.
