@@ -1,5 +1,5 @@
 /*!
- * Caracool Motion — Pie y mirada
+ * Caracool Motion — Pie · telón
  * El JS pone las clases: html.cm-telon, .cm-telon-pagina (lo que va antes
  * del pie) y .cm-telon-pie (la plantilla de pie). Sin JS no pasa nada.
  */
@@ -7,12 +7,3 @@ html.cm-telon .cm-telon-pagina{position:relative;z-index:1;overflow:clip;
   border-bottom-left-radius:var(--cm-telon-radio,44px);border-bottom-right-radius:var(--cm-telon-radio,44px);
   box-shadow:0 30px 60px -20px rgba(0,0,0,.45)}
 html.cm-telon .cm-telon-pie{position:sticky;bottom:0;z-index:0}
-
-/* mirada */
-[data-cm-mirada] svg{overflow:visible}
-[data-cm-mirada] .cm-pupila{transition:transform .5s cubic-bezier(.2,.7,.2,1)}
-[data-cm-mirada] .cm-parpado,[data-cm-mirada] svg.cm-parpado-auto{transform-box:fill-box;transform-origin:50% 55%;transition:transform .09s ease-in}
-[data-cm-mirada].cm-mirada--cierra .cm-parpado,[data-cm-mirada].cm-mirada--cierra svg.cm-parpado-auto{transform:scaleY(.08)}
-@media (prefers-reduced-motion:reduce){
-  [data-cm-mirada] .cm-pupila,[data-cm-mirada] .cm-parpado{transition:none;transform:none!important}
-}
