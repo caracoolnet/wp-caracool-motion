@@ -40,6 +40,9 @@ class Caracool_Motion_Botones {
 
 	const OPTION_KEY = 'caracool_motion_botones';
 
+	/** Si algún botón de la página se ha pintado en cristal. */
+	private static $cristal_visto = false;
+
 	public function __construct() {
 		add_action( 'elementor/element/button/section_style/after_section_end', array( $this, 'controles_boton' ), 10, 2 );
 		add_action( 'elementor/frontend/before_render', array( $this, 'inyectar_atributos' ) );
@@ -97,11 +100,47 @@ class Caracool_Motion_Botones {
 				'label'       => 'Animación al pasar el cursor',
 				'type'        => \Elementor\Controls_Manager::SELECT,
 				'options'     => array(
-					''   => 'La del sitio',
-					'no' => 'Sin animación',
+					''              => 'La del sitio',
+					'no'            => 'Sin animación',
+					'cristal'       => 'Cristal claro',
+					'cristal-tinte' => 'Cristal tintado',
 				),
 				'default'     => '',
-				'description' => 'El efecto se enciende para toda la web desde Caracool Motion. Aquí solo se puede dejar quieto este botón concreto.',
+				'description' => 'El barrido se enciende para toda la web desde Caracool Motion. Aquí se puede dejar quieto este botón o convertirlo en cristal.',
+			)
+		);
+
+		$element->add_control(
+			'cm_cristal_tinte',
+			array(
+				'label'       => 'Color del cristal',
+				'type'        => \Elementor\Controls_Manager::COLOR,
+				'global'      => array( 'active' => true ),
+				'selectors'   => array( '{{WRAPPER}}' => '--cm-cristal-tinte: {{VALUE}};' ),
+				'description' => 'Se usa al 72 % de opacidad. Vacío: el color Secundario del Kit.',
+				'condition'   => array( 'cm_boton' => 'cristal-tinte' ),
+			)
+		);
+
+		$element->add_control(
+			'cm_cristal_halo',
+			array(
+				'label'       => 'Color del halo',
+				'type'        => \Elementor\Controls_Manager::COLOR,
+				'global'      => array( 'active' => true ),
+				'selectors'   => array( '{{WRAPPER}}' => '--cm-cristal-halo: {{VALUE}};' ),
+				'description' => 'El brillo que rodea el botón y crece al pasar el cursor. Vacío: el color Principal del Kit.',
+				'condition'   => array( 'cm_boton' => array( 'cristal', 'cristal-tinte' ) ),
+			)
+		);
+
+		$element->add_control(
+			'cm_cristal_ayuda',
+			array(
+				'type'            => \Elementor\Controls_Manager::RAW_HTML,
+				'raw'             => esc_html( 'Fondo translúcido con desenfoque detrás, un filo de luz de 1 px y un halo. Luce sobre fotos o sobre un fondo vivo; sobre un color plano no aporta. El color del texto es el que tenga el botón en Elementor. No lleva barrido: los dos efectos se pisarían. Con «reducir transparencia» o en navegadores sin desenfoque pasa a sólido.' ),
+				'content_classes' => 'elementor-descriptor',
+				'condition'       => array( 'cm_boton' => array( 'cristal', 'cristal-tinte' ) ),
 			)
 		);
 
@@ -121,8 +160,11 @@ class Caracool_Motion_Botones {
 		$ajustes = $element->get_settings_for_display();
 		$valor   = isset( $ajustes['cm_boton'] ) ? sanitize_key( $ajustes['cm_boton'] ) : '';
 
-		if ( 'no' === $valor ) {
-			$element->add_render_attribute( '_wrapper', 'data-cm-boton', 'no' );
+		if ( 'no' === $valor || 'cristal' === $valor || 'cristal-tinte' === $valor ) {
+			$element->add_render_attribute( '_wrapper', 'data-cm-boton', $valor );
+		}
+		if ( 'cristal' === $valor || 'cristal-tinte' === $valor ) {
+			self::$cristal_visto = true;
 		}
 	}
 
@@ -132,11 +174,35 @@ class Caracool_Motion_Botones {
 		$base = CARACOOL_MOTION_URL . 'assets/';
 		wp_register_style( 'cm-botones', $base . 'cm-botones.css', array(), caracool_motion_ver( 'cm-botones.css' ) );
 		wp_register_script( 'cm-botones', $base . 'cm-botones.js', array(), caracool_motion_ver( 'cm-botones.js' ), true );
+		wp_register_style( 'cm-cristal', $base . 'cm-cristal.css', array(), caracool_motion_ver( 'cm-cristal.css' ) );
+		wp_register_script( 'cm-cristal', $base . 'cm-cristal.js', array(), caracool_motion_ver( 'cm-cristal.js' ), true );
+	}
+
+	/** Si algún botón de esta página es de cristal. Mira también los datos
+	 *  guardados, porque con la caché de elementos no se pasa por el render. */
+	private static function pagina_usa_cristal() {
+		if ( self::$cristal_visto ) {
+			return true;
+		}
+		foreach ( caracool_motion_documentos_de_la_pagina() as $id ) {
+			$datos = get_post_meta( $id, '_elementor_data', true );
+			if ( is_string( $datos ) && false !== strpos( $datos, '"cm_boton":"cristal' ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public function imprimir_assets() {
 		if ( self::editor_elementor() ) {
 			return;
+		}
+
+		// El cristal no depende del interruptor del barrido: se carga en las
+		// páginas que tienen algún botón de cristal, y solo en esas.
+		if ( self::pagina_usa_cristal() ) {
+			wp_enqueue_style( 'cm-cristal' );
+			wp_enqueue_script( 'cm-cristal' );
 		}
 
 		$c = self::get_settings();
@@ -270,6 +336,22 @@ class Caracool_Motion_Botones {
 					</tbody>
 				</table>
 				<p class="cm-card-desc">El efecto se desactiva solo si el visitante tiene el movimiento reducido activado en su sistema, y si los dos colores de un botón salen iguales ese botón se queda quieto en lugar de mostrar un barrido invisible.</p>
+			</div>
+
+			<div class="cm-card">
+				<div class="cm-card-head">
+					<div class="cm-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2.5" y="8" width="19" height="8" rx="4"/><path d="M6 11.5c1.5-1 3-1 4.5 0"/></svg></div>
+					<h2>Botones de cristal</h2>
+				</div>
+				<p class="cm-card-desc">Fondo translúcido con desenfoque detrás, un filo de luz de 1 px y un halo que crece al pasar el cursor. Se elige botón por botón en Elementor: <strong>Estilo → Caracool Motion → Cristal claro o Cristal tintado</strong>. No depende del interruptor de arriba y solo se carga en las páginas que lo usan (≈2 KB).</p>
+				<table class="cm-tabla">
+					<thead><tr><th style="width:34%">Variante</th><th>Cuándo usarla</th></tr></thead>
+					<tbody>
+						<tr><td><strong>Cristal claro</strong><br><code>cristal</code></td><td>Botón secundario sobre una foto o un fondo vivo. Deja ver lo que hay detrás.</td></tr>
+						<tr><td><strong>Cristal tintado</strong><br><code>cristal-tinte</code></td><td>Botón principal: el mismo cristal teñido de un color, para que pese más. El color se elige en el botón.</td></tr>
+					</tbody>
+				</table>
+				<p class="cm-card-desc" style="margin-top:14px">Luce sobre algo que se mueva o tenga textura; sobre un color plano no aporta y es mejor dejar el botón normal. Con «reducir transparencia» o en navegadores sin desenfoque, el botón pasa a sólido.</p>
 			</div>
 
 		</section>
