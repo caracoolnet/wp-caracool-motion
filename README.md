@@ -102,13 +102,15 @@ Fondo translúcido con desenfoque detrás, un filo de luz de 1 px y un halo que 
 
 La cabecera se maqueta como siempre en **Plantillas → Maquetador de temas**. El módulo no la dibuja: la mueve y la pinta.
 
-Con el interruptor encendido, la cabecera se queda **fija y transparente** sobre la primera pantalla; pasado el umbral, **se esconde al bajar y reaparece al subir**, ya con fondo sólido. Las composiciones a pantalla completa quedan limpias y el botón principal sigue a un gesto de distancia. Con el menú desplegable abierto no se esconde.
+Con el interruptor encendido, la cabecera se queda **fija y transparente** sobre la primera pantalla; pasado el umbral, **se esconde al bajar y reaparece al subir**, ya con fondo sólido o de cristal. Las composiciones a pantalla completa quedan limpias y el botón principal sigue a un gesto de distancia. Con el menú desplegable abierto no se esconde.
 
 | Ajuste | Qué hace |
 |---|---|
 | **Se esconde a partir de** | Píxeles de scroll a partir de los cuales entra en juego. Recomendado: 120. |
 | **Fondo al reaparecer** | Un color global del Kit, de sistema o personalizado. Cambia con el Kit. |
-| **Línea de separación** | Un hilo suave bajo la cabecera sólida, para páginas claras. |
+| **Estilo del fondo** | **Sólido** o **Cristal**: el color elegido al 55 % con el contenido desenfocado detrás y un halo suave, como los botones de cristal. Con «reducir transparencia» o sin `backdrop-filter`, sale sólido. |
+| **Enlaces del menú** | **Lo que tenga el widget** o **Píldora de cristal**: una cápsula translúcida detrás del enlace que va de uno a otro siguiendo el cursor (y el foco del teclado) con un pequeño rebote, y descansa en la página actual. Sustituye al puntero del widget Menú (subrayado, marco…). Solo primer nivel; en el móvil el menú va en el desplegable. |
+| **Línea de separación** | Un hilo suave bajo la cabecera sólida, para páginas claras. Con el cristal no se pinta. |
 
 Al activarla, la cabecera deja de ocupar sitio arriba: **las páginas sin foto a pantalla completa necesitan su propio margen superior**.
 

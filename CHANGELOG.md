@@ -6,6 +6,14 @@ tercer dígito es para lo que ya está publicado: republicar una tanda cerrada
 cuando hace falta que el actualizador de las webs se entere, o arreglar algo
 que se ha escapado en una versión que ya está instalada en algún sitio.
 
+## 0.10.0 (22 de septiembre de 2026)
+
+Dos ajustes nuevos en la cabecera.
+
+- **Estilo del fondo: cristal.** Al reaparecer, la cabecera puede llevar el color elegido al 55 % con el contenido desenfocado detrás y un halo suave, en lugar del fondo sólido. El desenfoque va en una capa aparte para no romper el menú desplegable del móvil. Con el cristal no se pinta la línea de separación. Con «reducir transparencia» o en navegadores sin `backdrop-filter`, sólido.
+- **Enlaces del menú: píldora de cristal.** Una cápsula translúcida detrás de los enlaces de primer nivel que va de uno a otro siguiendo el cursor o el foco del teclado y vuelve a la página actual al salir del menú. Sustituye al subrayado o al marco del widget Menú. Sin movimiento con «reducir movimiento».
+- Los dos vienen apagados: las webs que ya usan la cabecera no cambian hasta que se elijan en el panel.
+
 ## 0.9.1 (22 de septiembre de 2026)
 
 Se retira la «mirada» de la 0.9.0.
