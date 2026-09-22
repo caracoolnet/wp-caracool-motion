@@ -6,6 +6,15 @@ tercer dígito es para lo que ya está publicado: republicar una tanda cerrada
 cuando hace falta que el actualizador de las webs se entere, o arreglar algo
 que se ha escapado en una versión que ya está instalada en algún sitio.
 
+## 0.9.0 (22 de septiembre de 2026)
+
+Un módulo nuevo para cerrar las páginas.
+
+- **Módulo Pie y mirada.** Nueva sección en los contenedores, **Caracool Motion · Pie y mirada**, con dos piezas independientes.
+- **Telón**: en el contenedor raíz de la plantilla de pie. La página termina con esquinas redondeadas y sombra y sube dejando ver el pie quieto debajo. Es CSS (`position: sticky`); el JavaScript lo apaga por debajo del ancho elegido (1025 px por defecto) y cuando el pie no cabe en la pantalla.
+- **Mirada**: para un SVG en línea. La clase `cm-pupila` sigue al cursor (al scroll en táctil) y `cm-parpado` parpadea cada pocos segundos. Recorrido y parpadeo se eligen en el contenedor. Quieta con movimiento reducido.
+- `cm-pie.css` y `cm-pie.js` solo se imprimen en las páginas que usan alguna de las dos, leyendo los datos guardados de cada documento. Sin librerías. Un interruptor en su pestaña lo apaga en toda la web.
+
 ## 0.8.0 (22 de septiembre de 2026)
 
 Dos piezas nuevas, pensadas para el hero: un fondo que se mueve y unos botones de cristal para ponerle encima. Las dos se cargan solo en las páginas que las usan.

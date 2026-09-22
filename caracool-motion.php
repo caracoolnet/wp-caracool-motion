@@ -3,7 +3,7 @@
  * Plugin Name:  Caracool Motion
  * Plugin URI:   https://github.com/caracoolnet/wp-caracool-motion
  * Description:  Movimiento para webs hechas con Elementor: scroll con inercia y transiciones de sección que se eligen desde el propio panel de Elementor, sin escribir código ni CSS suelto.
- * Version:      0.8.0
+ * Version:      0.9.0
  * Author:       Caracool
  * Author URI:   https://caracool.net
  * License:      GPL-2.0-or-later
@@ -40,7 +40,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'CARACOOL_MOTION_VERSION', '0.8.0' );
+define( 'CARACOOL_MOTION_VERSION', '0.9.0' );
 define( 'CARACOOL_MOTION_FILE', __FILE__ );
 define( 'CARACOOL_MOTION_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CARACOOL_MOTION_URL', plugin_dir_url( __FILE__ ) );
@@ -154,7 +154,7 @@ class Caracool_Motion {
 			'nombre'  => 'Motion',
 			'pagina'  => 'caracool-motion',
 			'version' => CARACOOL_MOTION_VERSION,
-			'resumen' => 'Scroll con inercia, transiciones de sección y fondos vivos desde Elementor.',
+			'resumen' => 'Scroll con inercia, transiciones de sección, fondos vivos y pie con telón desde Elementor.',
 		);
 		return $lista;
 	}
@@ -445,7 +445,7 @@ new Caracool_Motion();
 // ── Módulos ─────────────────────────────────────────────────────────────
 // Cada uno se autorregistra. Si el archivo no existe, el plugin sigue
 // funcionando sin ese módulo.
-foreach ( array( 'cm-scroll.php', 'cm-botones.php', 'cm-cabecera.php', 'cm-intro.php', 'cm-fondo.php' ) as $modulo ) {
+foreach ( array( 'cm-scroll.php', 'cm-botones.php', 'cm-cabecera.php', 'cm-intro.php', 'cm-fondo.php', 'cm-pie.php' ) as $modulo ) {
 	$ruta = CARACOOL_MOTION_DIR . 'modules/' . $modulo;
 	if ( file_exists( $ruta ) ) {
 		require_once $ruta;
