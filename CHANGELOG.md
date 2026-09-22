@@ -6,6 +6,16 @@ tercer dígito es para lo que ya está publicado: republicar una tanda cerrada
 cuando hace falta que el actualizador de las webs se entere, o arreglar algo
 que se ha escapado en una versión que ya está instalada en algún sitio.
 
+## 0.8.0 (22 de septiembre de 2026)
+
+Dos piezas nuevas, pensadas para el hero: un fondo que se mueve y unos botones de cristal para ponerle encima. Las dos se cargan solo en las páginas que las usan.
+
+- **Módulo Fondo vivo.** Nueva sección en los contenedores, **Caracool Motion · Fondo vivo**, aparte del efecto de sección: un hero puede llevar a la vez entrada escalonada y fondo vivo. Dos variantes: **olas** (un lienzo de 128 px donde cinco manchas se funden y ondulan; el navegador lo estira) y **manchas** (cinco manchas en CSS que solo cambian de `transform`). Colores con el selector nativo; los vacíos salen del Principal del Kit. Velocidad, intensidad y grano.
+- El fondo vivo **no toca el fondo del contenedor**: la imagen o el color de Elementor se pintan primero y la capa entra con un fundido cuando la página ha cargado y el navegador está libre. Se para fuera de pantalla y con la pestaña oculta; con movimiento reducido, un fotograma quieto.
+- `cm-fondo.css` y `cm-fondo.js` solo se imprimen en las páginas que lo usan, leyendo los datos guardados de cada documento (vale con la caché de elementos). No dependen de GSAP. Un interruptor en su pestaña lo apaga en toda la web.
+- **Botones de cristal.** El desplegable del botón (**Estilo → Caracool Motion**) suma **Cristal claro** y **Cristal tintado**: fondo translúcido con desenfoque, filo de luz de 1 px y halo que crece al pasar el cursor. Color del cristal y del halo con el selector nativo; el texto conserva el color del botón. El barrido los salta. Con «reducir transparencia» o sin `backdrop-filter`, sólidos. `cm-cristal.css` y `cm-cristal.js` solo en páginas con algún botón de cristal, esté o no encendido el barrido.
+- Dos funciones comunes nuevas en el archivo principal, `caracool_motion_documentos_de_la_pagina()` y `caracool_motion_en_editor()`, que usan los módulos nuevos. Los antiguos no cambian.
+
 ## 0.7.3 (17 de septiembre de 2026)
 
 Remate de la 0.7.2: quedaban dos frases de la web de cliente.

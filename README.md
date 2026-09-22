@@ -22,7 +22,7 @@ Este plugin recoge todo eso en un sitio:
 ## Cómo se usa
 
 1. Instalar y activar.
-2. En **Caracool → Motion** (menú lateral, compartido con los demás plugins de la casa), una pestaña por módulo: Scroll, Botones, Cabecera, Intro. Un solo botón de guardar para todo.
+2. En **Caracool → Motion** (menú lateral, compartido con los demás plugins de la casa), una pestaña por módulo: Scroll, Botones, Cabecera, Intro, Fondo vivo. Un solo botón de guardar para todo.
 3. En Elementor, seleccionar un contenedor → pestaña **Estilo** → sección **Caracool Motion** → elegir efecto.
 
 Eso es todo. No hay clases que memorizar.
@@ -59,6 +59,44 @@ La banda lleva su propia copia del contenido del botón, fondo y texto recortado
 | **Sigue al cursor** | Entra por donde llegas y sale por donde te vas. Para un botón grande y solo. |
 
 Cuesta una capa por botón y una transición de `clip-path`, que va en la GPU. Cero JavaScript por fotograma.
+
+### Fondo vivo
+
+Manchas de color que se mueven y se mezclan despacio detrás del contenido de un contenedor. Se elige en Elementor: contenedor → **Estilo → Caracool Motion · Fondo vivo**. Va aparte del «Efecto de sección», así que un hero puede llevar a la vez la entrada escalonada y el fondo vivo.
+
+| Variante | Qué hace |
+|---|---|
+| **Olas** | Un lienzo pequeño (128 px de ancho) donde cinco manchas se funden y ondulan como tinta en agua; el navegador lo estira al tamaño del contenedor y queda suave. 30 fotogramas por segundo, sin librerías. |
+| **Manchas** | Cinco manchas difuminadas en CSS que solo cambian de `transform`. Casi sin coste; se mueven, pero no se mezclan. |
+
+| Opción | Qué hace |
+|---|---|
+| **Colores** | Fondo y cuatro manchas, con el selector nativo de Elementor (globales del Kit o cualquiera). Los vacíos salen del **Principal del Kit**: el fondo en un tono muy claro y las manchas en tintes del mismo color. Con dejarlos todos vacíos ya sale un fondo de marca. La quinta mancha es una sombra de la intensa. |
+| **Velocidad** | Multiplica el ritmo. Entre 0,2 y 3. |
+| **Intensidad** | Cuánto color ponen las manchas. Entre 0,3 y 1,6. |
+| **Grano** | Textura fina y fija encima. Evita las bandas en los degradados. |
+
+- **Solo se carga donde se usa.** `cm-fondo.css` y `cm-fondo.js` (unos 4 KB comprimidos entre los dos) se imprimen únicamente en las páginas que tienen algún contenedor con fondo vivo, leyendo los datos guardados de cada documento. No arrastran GSAP ni ScrollTrigger.
+- **El fondo del contenedor sigue debajo.** La imagen o el color que tenga en Elementor es lo primero que se pinta; el fondo vivo aparece encima con un fundido cuando la página ha cargado y el navegador está libre.
+- **Se para cuando no se ve**: fuera de pantalla o con la pestaña oculta. Con movimiento reducido, un fotograma quieto.
+- Un interruptor en su pestaña del panel lo apaga en toda la web de una vez.
+- El contenedor pasa a `overflow: hidden`: lo que sobresalga de él se recorta.
+
+### Botones de cristal
+
+Fondo translúcido con desenfoque detrás, un filo de luz de 1 px y un halo que crece al pasar el cursor, con una luz suave que sigue al ratón. Se elige botón a botón: **Estilo → Caracool Motion → Cristal claro o Cristal tintado**.
+
+| Variante | Para qué |
+|---|---|
+| **Cristal claro** | Botón secundario sobre una foto o un fondo vivo: deja ver lo que hay detrás. |
+| **Cristal tintado** | Botón principal: el mismo cristal teñido de un color al 72 %. Vacío, el Secundario del Kit. |
+
+- El **color del texto** es el que tenga el botón en Elementor. El **halo** se elige en el botón; vacío, el Principal del Kit.
+- **No lleva barrido**: los dos efectos se pisarían, así que el módulo de botones lo salta.
+- Con **«reducir transparencia»** o en navegadores sin `backdrop-filter`, pasa a sólido.
+- `cm-cristal.css` y `cm-cristal.js` (≈2 KB) solo se cargan en páginas con algún botón de cristal, esté o no encendido el barrido.
+- Luce sobre algo que se mueva o tenga textura. Sobre un color plano no aporta: ahí, botón normal.
+- No se usa el «liquid glass» con filtros SVG (`feDisplacementMap` en `backdrop-filter`): solo funciona en Chromium y en Safari no se ve.
 
 ### Cabecera
 
@@ -163,7 +201,8 @@ caracool-motion/
 │   ├── cm-scroll.php        Módulo de scroll y transiciones de sección
 │   ├── cm-botones.php       Módulo de botones
 │   ├── cm-cabecera.php      Módulo de cabecera
-│   └── cm-intro.php         Módulo de intro
+│   ├── cm-intro.php         Módulo de intro
+│   └── cm-fondo.php         Módulo de fondo vivo
 └── assets/
     ├── cm-scroll.css        Solo estructura, sin colores de marca
     ├── cm-scroll.js         Registro de efectos y motor
@@ -172,6 +211,10 @@ caracool-motion/
     ├── cm-cabecera.css      Estados de la cabecera
     ├── cm-cabecera.js       Dirección del scroll y estados
     ├── cm-intro.js          Piezas del logotipo, animación y salida
+    ├── cm-fondo.css         Capa del fondo vivo y variante manchas
+    ├── cm-fondo.js          Paleta desde el Kit, lienzo de olas, arranque
+    ├── cm-cristal.css       Botones de cristal
+    ├── cm-cristal.js        Luz que sigue al cursor en el cristal
     ├── gsap.min.js          3.12.5
     ├── ScrollTrigger.min.js 3.12.5
     └── lenis.min.js         1.1.20

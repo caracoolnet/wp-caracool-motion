@@ -3,7 +3,7 @@
  * Plugin Name:  Caracool Motion
  * Plugin URI:   https://github.com/caracoolnet/wp-caracool-motion
  * Description:  Movimiento para webs hechas con Elementor: scroll con inercia y transiciones de sección que se eligen desde el propio panel de Elementor, sin escribir código ni CSS suelto.
- * Version:      0.7.3
+ * Version:      0.8.0
  * Author:       Caracool
  * Author URI:   https://caracool.net
  * License:      GPL-2.0-or-later
@@ -40,7 +40,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'CARACOOL_MOTION_VERSION', '0.7.3' );
+define( 'CARACOOL_MOTION_VERSION', '0.8.0' );
 define( 'CARACOOL_MOTION_FILE', __FILE__ );
 define( 'CARACOOL_MOTION_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CARACOOL_MOTION_URL', plugin_dir_url( __FILE__ ) );
@@ -63,6 +63,51 @@ function caracool_motion_ver( $archivo ) {
 	$ruta = CARACOOL_MOTION_DIR . 'assets/' . $archivo;
 	$fecha = file_exists( $ruta ) ? filemtime( $ruta ) : 0;
 	return CARACOOL_MOTION_VERSION . ( $fecha ? '.' . $fecha : '' );
+}
+
+/**
+ * Los documentos de Elementor que se han pintado en esta página (la página,
+ * la cabecera, el pie, el Kit…). Elementor encola la hoja de cada uno como
+ * `elementor-post-<id>`, y esa cola vale también con la caché de elementos
+ * puesta. La usan los módulos para cargar sus recursos solo donde hacen falta.
+ *
+ * @return int[]
+ */
+function caracool_motion_documentos_de_la_pagina() {
+	$ids     = array();
+	$estilos = wp_styles();
+	if ( $estilos ) {
+		foreach ( array_merge( (array) $estilos->queue, (array) $estilos->done ) as $nombre ) {
+			if ( 0 === strpos( $nombre, 'elementor-post-' ) ) {
+				$id = (int) substr( $nombre, strlen( 'elementor-post-' ) );
+				if ( $id ) {
+					$ids[ $id ] = true;
+				}
+			}
+		}
+	}
+	if ( is_singular() ) {
+		$actual = (int) get_queried_object_id();
+		if ( $actual ) {
+			$ids[ $actual ] = true;
+		}
+	}
+	return array_keys( $ids );
+}
+
+/** Si la petición es el editor o la vista previa de Elementor. */
+function caracool_motion_en_editor() {
+	if ( ! class_exists( '\Elementor\Plugin' ) ) {
+		return false;
+	}
+	$e = \Elementor\Plugin::$instance;
+	if ( isset( $e->preview ) && method_exists( $e->preview, 'is_preview_mode' ) && $e->preview->is_preview_mode() ) {
+		return true;
+	}
+	if ( isset( $e->editor ) && method_exists( $e->editor, 'is_edit_mode' ) && $e->editor->is_edit_mode() ) {
+		return true;
+	}
+	return false;
 }
 
 class Caracool_Motion {
@@ -109,7 +154,7 @@ class Caracool_Motion {
 			'nombre'  => 'Motion',
 			'pagina'  => 'caracool-motion',
 			'version' => CARACOOL_MOTION_VERSION,
-			'resumen' => 'Scroll con inercia y transiciones de sección desde Elementor.',
+			'resumen' => 'Scroll con inercia, transiciones de sección y fondos vivos desde Elementor.',
 		);
 		return $lista;
 	}
@@ -400,7 +445,7 @@ new Caracool_Motion();
 // ── Módulos ─────────────────────────────────────────────────────────────
 // Cada uno se autorregistra. Si el archivo no existe, el plugin sigue
 // funcionando sin ese módulo.
-foreach ( array( 'cm-scroll.php', 'cm-botones.php', 'cm-cabecera.php', 'cm-intro.php' ) as $modulo ) {
+foreach ( array( 'cm-scroll.php', 'cm-botones.php', 'cm-cabecera.php', 'cm-intro.php', 'cm-fondo.php' ) as $modulo ) {
 	$ruta = CARACOOL_MOTION_DIR . 'modules/' . $modulo;
 	if ( file_exists( $ruta ) ) {
 		require_once $ruta;
