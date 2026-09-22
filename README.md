@@ -2,7 +2,7 @@
 
 Movimiento para webs hechas con Elementor: scroll con inercia y transiciones de sección que se eligen **desde el propio panel de Elementor**, sin escribir código, sin CSS suelto en los bloques y sin depender de servicios externos.
 
-**Versión actual:** 0.9.0 · **Requiere:** WordPress 6.0+, Elementor 3.16+ (contenedores flexbox)
+**Versión actual:** 0.9.1 · **Requiere:** WordPress 6.0+, Elementor 3.16+ (contenedores flexbox)
 
 ---
 
@@ -192,19 +192,15 @@ El desplegable de Elementor se construye a partir del filtro, así que la opció
 
 ---
 
-### Pie y mirada
+### Pie · telón
 
-Dos piezas para el final de la página, en el contenedor: **Estilo → Caracool Motion · Pie y mirada**.
+La página termina con esquinas redondeadas y sombra, y al llegar al final sube como un telón y deja ver el pie, que espera quieto debajo. Se activa en el contenedor raíz de la plantilla de pie: **Estilo → Caracool Motion · Pie**. Opciones: radio de las esquinas y ancho mínimo (1025 px por defecto).
 
-| Pieza | Qué hace | Cómo se monta |
-|---|---|---|
-| **Telón** | La página termina con esquinas redondeadas y sombra, y al llegar al final sube como un telón y deja ver el pie, que espera quieto debajo. | En el contenedor raíz de la plantilla de pie. Radio de las esquinas y ancho mínimo (1025 px por defecto). |
-| **Mirada** | Un dibujo SVG que sigue al cursor y parpadea de vez en cuando. En táctil sigue al scroll. | En el contenedor que tenga dentro el SVG en línea (widget HTML). La clase `cm-pupila` marca lo que se mueve y `cm-parpado` lo que parpadea; sin grupo, parpadea el SVG entero. |
-
-- El telón es CSS (`position: sticky` en el pie y `z-index` en lo que va antes). El JavaScript solo decide si cabe: se apaga por debajo del ancho elegido y cuando el pie es más alto que la pantalla, porque taparía su propia parte de arriba.
-- Lo que va antes del pie toma el color de fondo de la página para tapar el pie mientras sube.
-- La mirada se para fuera de pantalla y con la pestaña oculta. Con movimiento reducido no se mueve ni parpadea; el telón se queda, porque no es una animación sino la página desplazándose.
-- `cm-pie.css` y `cm-pie.js` (≈3 KB) solo se cargan en las páginas que usan alguna de las dos.
+- Es CSS (`position: sticky` en el pie y `z-index` en lo que va antes). El JavaScript solo decide si cabe: se apaga por debajo del ancho elegido y cuando el pie es más alto que la pantalla, porque taparía su propia parte de arriba.
+- Lo que va antes del pie toma el color de fondo de la página para taparlo mientras sube.
+- Con movimiento reducido se mantiene: no es una animación, es la página desplazándose.
+- `cm-pie.css` y `cm-pie.js` (≈2 KB) solo se cargan en las páginas que lo usan.
+- Lo que sea propio de la marca de un cliente (un logotipo que se mueve, un dibujo que sigue al cursor) no va aquí: va en el código de esa web.
 
 ## Estructura
 
@@ -217,7 +213,7 @@ caracool-motion/
 │   ├── cm-cabecera.php      Módulo de cabecera
 │   ├── cm-intro.php         Módulo de intro
 │   ├── cm-fondo.php         Módulo de fondo vivo
-│   └── cm-pie.php           Módulo de pie: telón y mirada
+│   └── cm-pie.php           Módulo de pie: telón
 └── assets/
     ├── cm-scroll.css        Solo estructura, sin colores de marca
     ├── cm-scroll.js         Registro de efectos y motor
@@ -230,8 +226,8 @@ caracool-motion/
     ├── cm-fondo.js          Paleta desde el Kit, lienzo de olas, arranque
     ├── cm-cristal.css       Botones de cristal
     ├── cm-cristal.js        Luz que sigue al cursor en el cristal
-    ├── cm-pie.css           Telón y parpadeo
-    ├── cm-pie.js            Decide si cabe el telón; pupila y parpadeo
+    ├── cm-pie.css           Telón
+    ├── cm-pie.js            Decide si cabe el telón
     ├── gsap.min.js          3.12.5
     ├── ScrollTrigger.min.js 3.12.5
     └── lenis.min.js         1.1.20

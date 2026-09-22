@@ -6,6 +6,13 @@ tercer dígito es para lo que ya está publicado: republicar una tanda cerrada
 cuando hace falta que el actualizador de las webs se entere, o arreglar algo
 que se ha escapado en una versión que ya está instalada en algún sitio.
 
+## 0.9.1 (22 de septiembre de 2026)
+
+Se retira la «mirada» de la 0.9.0.
+
+- Era el ojo de un logotipo concreto siguiendo al cursor: algo de la marca de una web, no del plugin que usan todas. Sale del módulo, de sus controles y de sus archivos, y vive en el código de esa web.
+- El módulo se queda solo con el **telón** y pasa a llamarse **Caracool Motion · Pie**. Los ajustes guardados del telón siguen valiendo; los contenedores que tuvieran la mirada activada simplemente dejan de moverse.
+
 ## 0.9.0 (22 de septiembre de 2026)
 
 Un módulo nuevo para cerrar las páginas.
