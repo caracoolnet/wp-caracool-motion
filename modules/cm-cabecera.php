@@ -7,13 +7,14 @@
  * QUÉ HACE
  *  Convierte la cabecera del Theme Builder de Elementor en una cabecera
  *  «inteligente»: fija y transparente sobre la primera pantalla, se
- *  esconde al bajar y reaparece al subir, ya con fondo sólido. Así las
+ *  esconde al bajar y reaparece al subir, ya con fondo sólido o de cristal. Así las
  *  composiciones a pantalla completa quedan limpias y el botón principal
  *  sigue a un gesto de distancia.
  *
  *  1. Interruptor de sitio en el panel, con el umbral a partir del cual se
  *     esconde y el color global del Kit que toma al reaparecer.
- *  2. Imprime CSS y JS solo si el interruptor está encendido.
+ *  2. Opcional: píldora de cristal detrás de los enlaces del menú.
+ *  3. Imprime CSS y JS solo si el interruptor está encendido.
  *
  * QUÉ NO HACE
  *  No maqueta la cabecera: eso se hace en Elementor → Plantillas → Maquetador
@@ -108,8 +109,10 @@ class Caracool_Motion_Cabecera {
 				array(
 					'umbral' => (int) $c['umbral'],
 					'fondo'  => '--e-global-color-' . $c['fondo'],
-					'sombra' => ( 'si' === $c['sombra'] ),
-					'linea'  => '--e-global-color-' . $c['linea'],
+					'sombra'  => ( 'si' === $c['sombra'] ),
+					'linea'   => '--e-global-color-' . $c['linea'],
+					'cristal' => ( 'cristal' === $c['estilo'] ),
+					'pildora' => ( 'pildora' === $c['menu'] ),
 				)
 			) . ';',
 			'before'
@@ -151,6 +154,8 @@ class Caracool_Motion_Cabecera {
 			'fondo'  => $fondo,
 			'sombra' => ( isset( $g['sombra'] ) && 'si' === $g['sombra'] ) ? 'si' : 'no',
 			'linea'  => $linea,
+			'estilo' => ( isset( $g['estilo'] ) && 'cristal' === $g['estilo'] ) ? 'cristal' : 'solido',
+			'menu'   => ( isset( $g['menu'] ) && 'pildora' === $g['menu'] ) ? 'pildora' : 'elementor',
 		);
 	}
 
@@ -180,7 +185,7 @@ class Caracool_Motion_Cabecera {
 					<div class="cm-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M3 14h18M3 19h12"/></svg></div>
 					<h2>Cabecera</h2>
 				</div>
-				<p class="cm-card-desc">La cabecera del Maquetador de temas se queda fija y transparente sobre la primera pantalla, <strong>se esconde al bajar y reaparece al subir</strong>, ya con fondo sólido. Las composiciones a pantalla completa quedan limpias y el botón principal sigue a un gesto.</p>
+				<p class="cm-card-desc">La cabecera del Maquetador de temas se queda fija y transparente sobre la primera pantalla, <strong>se esconde al bajar y reaparece al subir</strong>, ya con fondo sólido o de cristal. Las composiciones a pantalla completa quedan limpias y el botón principal sigue a un gesto.</p>
 
 				<div class="cm-campo">
 					<label for="cm_cabecera_activo">Cabecera inteligente</label>
@@ -207,6 +212,28 @@ class Caracool_Motion_Cabecera {
 							<?php endforeach; ?>
 						</select>
 						<span class="cm-hint">Un color global del Kit de Elementor, de sistema o personalizado. Si cambias el color en el Kit, la cabecera cambia sola.</span>
+					</div>
+				</div>
+
+				<div class="cm-campo">
+					<label for="cm_cabecera_estilo">Estilo del fondo</label>
+					<div>
+						<select name="cm_cabecera[estilo]" id="cm_cabecera_estilo">
+							<option value="solido" <?php selected( 'solido', $c['estilo'] ); ?>>Sólido</option>
+							<option value="cristal" <?php selected( 'cristal', $c['estilo'] ); ?>>Cristal (translúcido con desenfoque)</option>
+						</select>
+						<span class="cm-hint">Cristal: el color de arriba al 55 % con el contenido desenfocado detrás y un halo suave, como los botones de cristal. Sin línea de separación. Con «reducir transparencia» o en navegadores sin desenfoque, sale sólido.</span>
+					</div>
+				</div>
+
+				<div class="cm-campo">
+					<label for="cm_cabecera_menu">Enlaces del menú</label>
+					<div>
+						<select name="cm_cabecera[menu]" id="cm_cabecera_menu">
+							<option value="elementor" <?php selected( 'elementor', $c['menu'] ); ?>>Lo que tenga el widget de Elementor</option>
+							<option value="pildora" <?php selected( 'pildora', $c['menu'] ); ?>>Píldora de cristal</option>
+						</select>
+						<span class="cm-hint">Píldora de cristal: una cápsula translúcida detrás del enlace que va de uno a otro siguiendo el cursor y descansa en la página actual. Sustituye al subrayado o al marco del widget Menú de la cabecera. Solo los enlaces de primer nivel y solo en ordenador: en el móvil el menú va en el desplegable.</span>
 					</div>
 				</div>
 
@@ -261,6 +288,8 @@ class Caracool_Motion_Cabecera {
 				'fondo'  => $fondo,
 				'sombra' => ( isset( $post['sombra'] ) && 'si' === $post['sombra'] ) ? 'si' : 'no',
 				'linea'  => $linea,
+				'estilo' => ( isset( $post['estilo'] ) && 'cristal' === $post['estilo'] ) ? 'cristal' : 'solido',
+				'menu'   => ( isset( $post['menu'] ) && 'pildora' === $post['menu'] ) ? 'pildora' : 'elementor',
 			)
 		);
 	}
