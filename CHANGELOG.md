@@ -1,5 +1,68 @@
 # Changelog — Caracool Motion
 
+## 0.10.6 · 18 de noviembre de 2026
+
+Un ajuste nuevo en la cabecera. Viene apagado, así que en las webs que ya
+usan Motion no cambia nada.
+
+- **Cabecera · Espera a la intro.** Con el interruptor encendido, la
+  cabecera se queda escondida arriba mientras se ve la intro de entrada y
+  baja cuando termina, con la misma transición con la que reaparece al
+  subir la página. Está pensado para una intro que deja ver la página
+  (una sábana de un color transparente): hasta ahora la cabecera se veía
+  desde el primer momento, debajo del logotipo.
+- Solo actúa mientras la intro está en marcha. En las páginas sin intro,
+  cuando ya se ha visto y con el movimiento reducido, la cabecera se
+  comporta como siempre.
+- Es una regla de CSS que se imprime con la hoja de la cabecera solo si
+  el ajuste está encendido. No añade JavaScript.
+
+## 0.10.5 · 16 de noviembre de 2026
+
+Arreglos para quien navega con el teclado. Con ratón no cambia nada, y en
+reposo todo se ve igual que antes.
+
+- **Las piezas que esperan su entrada se ven al recibir el foco.** Hasta
+  que el bloque llegaba a la vista, sus piezas estaban a opacidad 0, y al
+  tabular el foco podía caer uno o dos segundos en un enlace invisible
+  (WCAG 2.4.7). Ahora las entradas marcan sus piezas con `data-cm-entra` y,
+  en cuanto algo recibe el foco, las que lo envuelven se muestran al
+  momento. No toca nada de lo que va atado al scroll.
+- **La cabecera reaparece si el foco entra en ella.** Volviendo atrás con
+  Mayúsculas + Tab, el foco podía llegar a un enlace de la cabecera mientras
+  estaba escondida.
+- **Navegación por secciones:** el punto o la flecha con el foco se ve
+  entero y enseña su etiqueta, igual que al pasar el ratón. La etiqueta se
+  puede recorrer con el ratón sin que se cierre y Escape la oculta
+  (WCAG 1.4.13).
+
+## 0.10.4 · 16 de noviembre de 2026
+
+- **La píldora del menú, fuera de la lista.** La cápsula de cristal se
+  metía como un `<span>` dentro del `<ul>` del menú, y una lista solo puede
+  tener `<li>` dentro. Los analizadores de accesibilidad lo marcaban como
+  fallo de WCAG 1.3.1 en todas las páginas de las webs con la píldora
+  puesta, y en webs con Kit Digital eso es un requerimiento de Red.es. Ahora
+  va justo antes del `<ul>`, dentro del `<nav>` del widget, y se mide contra
+  él. Se ve y se mueve igual que antes.
+
+## 0.10.3 · 30 de octubre de 2026
+
+- **Actualizaciones firmadas.** Lleva el actualizador común 1.1.0. Antes de
+  instalar una versión nueva, comprueba que el zip viene firmado por
+  Caracool; si alguien lo hubiera cambiado por el camino, no se instala. En
+  Caracool → Licencia, la licencia sale recortada y no entera.
+
+## 0.10.2 · 29 de octubre de 2026
+
+- **Actualizaciones desde Caracool Central.** El plugin ya no pregunta a
+  GitHub por su cuenta: lleva el actualizador común de la casa
+  (`inc/caracool-actualizador.php`), que pregunta a Caracool Central
+  (updates.caracool.net) con la licencia de la web y le da el zip. Así los
+  repositorios pueden ser privados. La licencia se pega una vez en el menú
+  Caracool → Licencia y vale para todos los plugins de la casa. Mientras la
+  web no tenga licencia, pregunta a GitHub como antes.
+
 Numeración: se sube 0.1 en 0.1 cuando una tanda de cambios queda cerrada y
 confirmada. Los arreglos sobre algo aún sin confirmar no suben número. El
 tercer dígito es para lo que ya está publicado: republicar una tanda cerrada

@@ -3,7 +3,7 @@
  * Plugin Name:  Caracool Motion
  * Plugin URI:   https://github.com/caracoolnet/wp-caracool-motion
  * Description:  Movimiento para webs hechas con Elementor: scroll con inercia y transiciones de sección que se eligen desde el propio panel de Elementor, sin escribir código ni CSS suelto.
- * Version:      0.10.1
+ * Version:      0.10.6
  * Author:       Caracool
  * Author URI:   https://caracool.net
  * License:      GPL-2.0-or-later
@@ -40,7 +40,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'CARACOOL_MOTION_VERSION', '0.10.1' );
+define( 'CARACOOL_MOTION_VERSION', '0.10.6' );
 define( 'CARACOOL_MOTION_FILE', __FILE__ );
 define( 'CARACOOL_MOTION_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CARACOOL_MOTION_URL', plugin_dir_url( __FILE__ ) );
@@ -53,6 +53,7 @@ define( 'CARACOOL_MOTION_REPO', 'caracoolnet/wp-caracool-motion' );
  * crea el padre y los demás se lo encuentran hecho.
  */
 require_once CARACOOL_MOTION_DIR . 'inc/caracool-menu.php';
+require_once CARACOOL_MOTION_DIR . 'inc/caracool-actualizador.php';
 
 /**
  * Versión de un recurso del plugin para la URL: la del plugin más la fecha
@@ -118,8 +119,6 @@ class Caracool_Motion {
 		add_action( 'admin_menu', array( $this, 'add_menu' ) );
 		add_filter( 'caracool_plugins', array( $this, 'presentarse' ) );
 		add_action( 'admin_post_caracool_motion_save', array( $this, 'save_settings' ), 10 );
-		add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'check_update' ) );
-		add_filter( 'plugins_api', array( $this, 'update_details' ), 20, 3 );
 	}
 
 	/** Ajustes generales del plugin (los de cada módulo viven en su archivo). */
@@ -348,99 +347,22 @@ class Caracool_Motion {
 		}
 		return $svg . '</svg>';
 	}
-
-	// ── Comprobador de actualizaciones contra las releases de GitHub ────
-
-	private function ultima_release() {
-		$cache = get_site_transient( 'caracool_motion_release' );
-		if ( false !== $cache ) {
-			return $cache;
-		}
-
-		$r = wp_remote_get(
-			'https://api.github.com/repos/' . CARACOOL_MOTION_REPO . '/releases/latest',
-			array(
-				'timeout' => 8,
-				'headers' => array( 'Accept' => 'application/vnd.github+json' ),
-			)
-		);
-
-		if ( is_wp_error( $r ) || 200 !== wp_remote_retrieve_response_code( $r ) ) {
-			set_site_transient( 'caracool_motion_release', array(), 30 * MINUTE_IN_SECONDS );
-			return array();
-		}
-
-		$data = json_decode( wp_remote_retrieve_body( $r ), true );
-		if ( ! is_array( $data ) ) {
-			$data = array();
-		}
-
-		set_site_transient( 'caracool_motion_release', $data, 6 * HOUR_IN_SECONDS );
-		return $data;
-	}
-
-	public function check_update( $transient ) {
-		if ( empty( $transient->checked ) ) {
-			return $transient;
-		}
-
-		$rel = $this->ultima_release();
-		if ( empty( $rel['tag_name'] ) ) {
-			return $transient;
-		}
-
-		$nueva = ltrim( $rel['tag_name'], 'vV' );
-		if ( version_compare( $nueva, CARACOOL_MOTION_VERSION, '<=' ) ) {
-			return $transient;
-		}
-
-		$zip = '';
-		if ( ! empty( $rel['assets'][0]['browser_download_url'] ) ) {
-			$zip = $rel['assets'][0]['browser_download_url'];
-		} elseif ( ! empty( $rel['zipball_url'] ) ) {
-			$zip = $rel['zipball_url'];
-		}
-
-		$slug = plugin_basename( CARACOOL_MOTION_FILE );
-
-		$item                 = new stdClass();
-		$item->slug           = 'caracool-motion';
-		$item->plugin         = $slug;
-		$item->new_version    = $nueva;
-		$item->url            = 'https://github.com/' . CARACOOL_MOTION_REPO;
-		$item->package        = $zip;
-		$item->tested         = get_bloginfo( 'version' );
-		$transient->response[ $slug ] = $item;
-
-		return $transient;
-	}
-
-	public function update_details( $res, $action, $args ) {
-		if ( 'plugin_information' !== $action || empty( $args->slug ) || 'caracool-motion' !== $args->slug ) {
-			return $res;
-		}
-
-		$rel = $this->ultima_release();
-
-		$info                = new stdClass();
-		$info->name          = 'Caracool Motion';
-		$info->slug          = 'caracool-motion';
-		$info->version       = ! empty( $rel['tag_name'] ) ? ltrim( $rel['tag_name'], 'vV' ) : CARACOOL_MOTION_VERSION;
-		$info->author        = '<a href="https://caracool.net">Caracool</a>';
-		$info->homepage      = 'https://github.com/' . CARACOOL_MOTION_REPO;
-		$info->sections      = array(
-			'description' => 'Movimiento para webs de Elementor: scroll con inercia y transiciones de sección que se eligen desde el propio panel.',
-			'changelog'   => ! empty( $rel['body'] ) ? nl2br( esc_html( $rel['body'] ) ) : 'Sin notas.',
-		);
-		if ( ! empty( $rel['assets'][0]['browser_download_url'] ) ) {
-			$info->download_link = $rel['assets'][0]['browser_download_url'];
-		}
-
-		return $info;
-	}
 }
 
 new Caracool_Motion();
+
+// ── Actualizaciones: las da Caracool Central con la licencia de la web ──
+// (inc/caracool-actualizador.php, común a todos los plugins de la casa)
+caracool_actualizador_v2(
+	array(
+		'archivo' => CARACOOL_MOTION_FILE,
+		'slug'    => 'motion',
+		'version' => CARACOOL_MOTION_VERSION,
+		'repo'    => CARACOOL_MOTION_REPO,
+		'nombre'  => 'Caracool Motion',
+		'resumen' => 'Movimiento para webs hechas con Elementor: scroll con inercia y transiciones de sección.',
+	)
+);
 
 // ── Módulos ─────────────────────────────────────────────────────────────
 // Cada uno se autorregistra. Si el archivo no existe, el plugin sigue

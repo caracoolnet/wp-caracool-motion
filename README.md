@@ -107,6 +107,7 @@ Con el interruptor encendido, la cabecera se queda **fija y transparente** sobre
 | Ajuste | Qué hace |
 |---|---|
 | **Se esconde a partir de** | Píxeles de scroll a partir de los cuales entra en juego. Recomendado: 120. |
+| **Espera a la intro** | Mientras se ve la intro de entrada, la cabecera se queda escondida arriba y baja cuando termina. Para intros que dejan ver la página. Apagado de fábrica. |
 | **Fondo al reaparecer** | Un color global del Kit, de sistema o personalizado. Cambia con el Kit. |
 | **Estilo del fondo** | **Sólido** o **Cristal**: el color elegido al 55 % con el contenido desenfocado detrás y un halo suave, como los botones de cristal. Con «reducir transparencia» o sin `backdrop-filter`, sale sólido. |
 | **Enlaces del menú** | **Lo que tenga el widget** o **Píldora de cristal**: una cápsula translúcida detrás del enlace que va de uno a otro siguiendo el cursor (y el foco del teclado) con un pequeño rebote, y descansa en la página actual. Sustituye al puntero del widget Menú (subrayado, marco…). Solo primer nivel; en el móvil el menú va en el desplegable. |
