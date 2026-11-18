@@ -3,7 +3,13 @@
  * Harness de pruebas para Caracool Motion — sin WordPress instalado.
  * Mocks mínimos de las funciones que usa el plugin, más comprobaciones de
  * valores por defecto, guardado, recorte de rangos y callbacks existentes.
+ *
+ * Se lanza desde la carpeta del proyecto:  php tests/tests-caracool-motion.php
+ * El plugin se lee de ../src. Para probar otra copia:
+ *   CM_RAIZ=/ruta/al/plugin php tests/tests-caracool-motion.php
  */
+define( 'CM_RAIZ', getenv( 'CM_RAIZ' ) ? rtrim( getenv( 'CM_RAIZ' ), '/' ) : dirname( __DIR__ ) . '/src' );
+
 
 $GLOBALS['opciones']  = array();
 $GLOBALS['acciones']  = array();
@@ -61,6 +67,7 @@ function wp_register_style() {} function wp_register_script() {}
 function wp_enqueue_style( $h = '' ) { $GLOBALS['encolados'][] = $h; }
 function wp_enqueue_script( $h = '' ) { $GLOBALS['encolados'][] = $h; }
 function wp_add_inline_script() {}
+function wp_add_inline_style( $h = '', $css = '' ) { $GLOBALS['estilos_en_linea'][ $h ][] = $css; }
 function wp_remote_get( $u, $a = array() ) { return new WP_Error(); }
 function wp_remote_retrieve_response_code( $r ) { return 0; }
 function wp_remote_retrieve_body( $r ) { return ''; }
@@ -90,7 +97,7 @@ function wp_get_attachment_url( $id ) { return ''; }
 function wp_enqueue_media() { $GLOBALS['encolados'][] = 'wp-media'; }
 function get_pages( $a = array() ) { return array(); }
 
-require_once dirname( __DIR__ ) . '/caracool-motion.php';
+require_once CM_RAIZ . '/caracool-motion.php';
 
 function comprueba( $titulo, $condicion, $detalle = '' ) {
 	if ( $condicion ) { $GLOBALS['ok']++; echo "  ok  · $titulo\n"; }
@@ -213,6 +220,7 @@ comprueba( 'cabecera apagada de fábrica', 'no' === $cb['activo'] );
 comprueba( 'umbral por defecto 120', 120 === (int) $cb['umbral'], 'era ' . $cb['umbral'] );
 comprueba( 'fondo por defecto primary', 'primary' === $cb['fondo'], 'era ' . $cb['fondo'] );
 comprueba( 'sin línea de fábrica', 'no' === $cb['sombra'] );
+comprueba( 'la cabecera no espera a la intro de fábrica', 'no' === $cb['intro'] );
 
 echo "\n=== Cabecera · guardado ===\n";
 $mc = new Caracool_Motion_Cabecera();
@@ -223,6 +231,31 @@ comprueba( 'guarda encendida', 'si' === $cb['activo'] );
 comprueba( 'guarda el umbral', 200 === (int) $cb['umbral'], 'era ' . $cb['umbral'] );
 comprueba( 'guarda el fondo de sistema', 'text' === $cb['fondo'], 'era ' . $cb['fondo'] );
 comprueba( 'guarda la línea', 'si' === $cb['sombra'] );
+comprueba( 'sin marcar «Espera a la intro», se queda apagado', 'no' === $cb['intro'] );
+
+echo "\n=== Cabecera · espera a la intro ===\n";
+$GLOBALS['estilos_en_linea'] = array();
+$mc->imprimir_assets();
+comprueba( 'con el ajuste apagado no se imprime la regla', empty( $GLOBALS['estilos_en_linea']['cm-cabecera'] ) );
+$_POST = array( 'cm_cabecera' => array( 'activo' => 'si', 'intro' => 'si' ) );
+$mc->guardar();
+$cb = Caracool_Motion_Cabecera::get_settings();
+comprueba( 'guarda «Espera a la intro»', 'si' === $cb['intro'] );
+$GLOBALS['estilos_en_linea'] = array();
+$mc->imprimir_assets();
+$regla = isset( $GLOBALS['estilos_en_linea']['cm-cabecera'][0] ) ? $GLOBALS['estilos_en_linea']['cm-cabecera'][0] : '';
+comprueba( 'encendido, la regla va con la hoja de la cabecera', false !== strpos( $regla, 'html.cm-intro-activa' ) && false !== strpos( $regla, 'translateY' ) );
+comprueba( 'la regla solo actúa con la intro en marcha', 0 === strpos( $regla, 'html.cm-intro-activa ' ) && 2 === substr_count( $regla, 'html.cm-intro-activa' ) );
+$_POST = array( 'cm_cabecera' => array( 'intro' => 'si' ) );
+$mc->guardar();
+$GLOBALS['estilos_en_linea'] = array();
+$mc->imprimir_assets();
+comprueba( 'con la cabecera inteligente apagada no se imprime nada', empty( $GLOBALS['estilos_en_linea'] ) );
+$_POST = array( 'cm_cabecera' => array( 'intro' => 'quiza' ) );
+$mc->guardar();
+comprueba( 'un valor raro lo deja apagado', 'no' === Caracool_Motion_Cabecera::get_settings()['intro'] );
+$_POST = array( 'cm_cabecera' => array( 'activo' => 'si', 'umbral' => '200', 'fondo' => 'text', 'sombra' => 'si' ) );
+$mc->guardar();
 
 echo "\n=== Cabecera · basura ===\n";
 foreach ( array( '10', '5000', 'abc', '' ) as $malo ) {
@@ -244,7 +277,7 @@ comprueba( 'la entrada ofrece elegir cuándo entra', in_array( 'disparo', $fx['e
 comprueba( 'los dos disparos son bloque y piezas', array( 'bloque', 'piezas' ) === array_keys( $op['disparo']['valores'] ) );
 comprueba( 'de fábrica entra todo al llegar al bloque', 'bloque' === $op['disparo']['defecto'] );
 comprueba( 'ya no queda rastro del enfoque', ! isset( $op['estilo'] ) );
-$js = file_get_contents( dirname( __DIR__ ) . '/assets/cm-scroll.js' );
+$js = file_get_contents( CM_RAIZ . '/assets/cm-scroll.js' );
 comprueba( 'el JS mira si ScrollTrigger está antes de registrarlo', false !== strpos( $js, "var hayST = typeof window.ScrollTrigger !== 'undefined'" ) );
 $st_sin_guarda = array_values( array_filter(
 	explode( "\n", $js ),
@@ -268,7 +301,7 @@ comprueba( 'red de seguridad para lo pegado al final de la página', false !== s
 comprueba( 'la línea de entrada sigue en el 12 % de abajo', false !== strpos( $js, "rootMargin: '0px 0px -12% 0px'" ) );
 
 echo "\n=== La foto crece y su línea de avance ===\n";
-$css = file_get_contents( dirname( __DIR__ ) . '/assets/cm-scroll.css' );
+$css = file_get_contents( CM_RAIZ . '/assets/cm-scroll.css' );
 comprueba( 'la foto crece hasta el panel, no hasta la ventana', false !== strpos( $js, 'return interior.clientWidth;' ) && false !== strpos( $js, 'return interior.clientHeight;' ) && false === strpos( $js, 'return window.innerHeight; }' ) );
 comprueba( 'el avance se anima como número, no como ancho', false !== strpos( $js, "{ '--cm-avance': 0 }" ) && false !== strpos( $js, "'--cm-avance': 1" ) );
 comprueba( 'en escritorio la línea es ancho', false !== strpos( $css, 'width: calc(var(--cm-avance, 0) * 100%);' ) );
@@ -276,7 +309,7 @@ comprueba( 'en móvil la línea es alto', false !== strpos( $css, 'height: calc(
 comprueba( 'y en móvil va de pie pegada a la izquierda', false !== strpos( $css, "\t.cm-progreso {\n\t\ttop: 0;\n\t\tbottom: 0;\n\t\tleft: 0;\n\t\tright: auto;" ) );
 
 echo "\n=== Nada de parpadeos al cargar ===\n";
-$php_scroll = file_get_contents( dirname( __DIR__ ) . '/modules/cm-scroll.php' );
+$php_scroll = file_get_contents( CM_RAIZ . '/modules/cm-scroll.php' );
 comprueba( 'cm-scroll se registra solo con GSAP como dependencia fija', (bool) preg_match( "/wp_register_script\\(\\s*'cm-scroll'.*?array\\(\\s*'cm-gsap'\\s*\\)/s", $php_scroll ) );
 comprueba( 'ScrollTrigger se encola solo si algún efecto va atado al scroll', false !== strpos( $php_scroll, "\$necesita_st" ) && false !== strpos( $php_scroll, "\$deps[] = 'cm-scrolltrigger';" ) );
 comprueba( 'Lenis se encola solo con la inercia activada', (bool) preg_match( "/if \\( 'si' === \\\$conf\\['inercia'\\] \\) \\{\\s*\\\$deps\\[\\] = 'cm-lenis';/", $php_scroll ) );
@@ -380,7 +413,7 @@ comprueba( 'con tope de 800 ms por si algo se atasca', false !== strpos( $js, 'w
 comprueba( 'cuandoSeVea pasa por la pista', false !== strpos( $js, 'cuandoAsiente(function () { requestAnimationFrame(fn); })' ) );
 
 echo "\n=== La intro avisa cuando destapa de verdad ===\n";
-$ji = file_get_contents( dirname( __DIR__ ) . '/assets/cm-intro.js' );
+$ji = file_get_contents( CM_RAIZ . '/assets/cm-intro.js' );
 comprueba( 'el aviso sale del recorrido de la sábana, no del reloj', false !== strpos( $ji, 'var DESTAPE = 0.25' ) && false !== strpos( $ji, 'recorrido >= DESTAPE' ) );
 comprueba( 'ya no se avisa al empezar el tramo', false === strpos( $ji, 'tl.call(avisarSale' ) );
 comprueba( 'las dos salidas vigilan el destape', 2 === substr_count( $ji, 'onUpdate: vigilarDestape, onComplete: avisarSale' ) );
@@ -388,7 +421,7 @@ comprueba( 'el aviso solo sale una vez', false !== strpos( $ji, 'if (dicho) { re
 
 echo "\n=== Pestaña de Elementor ===\n";
 foreach ( array( 'modules/cm-scroll.php', 'modules/cm-botones.php' ) as $f ) {
-	$src = file_get_contents( dirname( __DIR__ ) . '/' . $f );
+	$src = file_get_contents( CM_RAIZ . '/' . $f );
 	comprueba( "$f cuelga su sección en la pestaña Estilo", false !== strpos( $src, 'TAB_STYLE' ) && false === strpos( $src, 'TAB_ADVANCED' ) );
 }
 
@@ -443,7 +476,7 @@ echo "\n=== Menú compartido de la casa ===\n";
 $GLOBALS['menus']            = array();
 $GLOBALS['admin_page_hooks'] = array();
 
-comprueba( 'el archivo común está en el plugin', file_exists( dirname( __DIR__ ) . '/inc/caracool-menu.php' ) );
+comprueba( 'el archivo común está en el plugin', file_exists( CM_RAIZ . '/inc/caracool-menu.php' ) );
 comprueba( 'el slug compartido está definido', defined( 'CARACOOL_MENU_SLUG' ) && 'caracool' === CARACOOL_MENU_SLUG );
 
 caracool_menu_padre();
@@ -503,7 +536,7 @@ $total = 0;
 foreach ( array_merge( $GLOBALS['acciones'], $GLOBALS['filtros'] ) as $par ) {
 	list( $hook, $cb ) = $par;
 	$total++;
-	comprueba( "callback de $hook", is_callable( $cb ), is_array( $cb ) ? get_class( $cb[0] ) . '::' . $cb[1] : '' );
+	comprueba( "callback de $hook", is_callable( $cb ), is_array( $cb ) ? ( is_object( $cb[0] ) ? get_class( $cb[0] ) : $cb[0] ) . '::' . $cb[1] : '' );
 }
 echo "  ($total hooks registrados)\n";
 
