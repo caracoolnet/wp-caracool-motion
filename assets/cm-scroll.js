@@ -44,6 +44,31 @@
 
 	if (reducido || typeof window.gsap === 'undefined') { destapar(); return; }
 
+	/* Teclado. Las piezas que esperan su entrada están a opacidad 0 hasta
+	   que el bloque llega a la vista, y al tabular el foco podía caer en un
+	   enlace que aún no se veía (WCAG 2.4.7). En cuanto algo recibe el foco,
+	   las piezas que lo envuelven se muestran ya, sin animación. Solo actúa
+	   sobre piezas marcadas por las entradas (data-cm-entra), así que no
+	   toca nada atado al scroll. Con ratón no se nota. */
+	document.addEventListener('focusin', function (e) {
+		var x = e.target;
+		while (x && x.nodeType === 1 && x !== document.body) {
+			if (x.hasAttribute('data-cm-entra')) {
+				x.removeAttribute('data-cm-entra');
+				gsap.killTweensOf(x);
+				gsap.set(x, { clearProps: 'opacity,transform' });
+			}
+			x = x.parentElement;
+		}
+	});
+
+	/* La marca se queda puesta durante toda la animación, también mientras
+	   una pieza espera su turno en el escalonado: si el foco llega antes,
+	   se muestra al momento. Cuando ya ha entrado, quitarla no cambia nada. */
+	function marcarEntrada(piezas) {
+		piezas.forEach(function (p) { p.setAttribute('data-cm-entra', ''); });
+	}
+
 	/* ScrollTrigger solo viaja si la página lleva algún efecto atado al scroll
 	   (cortina, crece, parallax). Las páginas que solo usan entrada o marca no
 	   lo cargan: esos dos van por IntersectionObserver. Todo lo que dependa de
@@ -321,6 +346,7 @@
 		colorGlobal: colorGlobal,
 		colorDeVariable: colorDeVariable,
 		fondoListo: fondoListo,
+		marcarEntrada: marcarEntrada,
 		dur: dur
 	};
 
@@ -360,6 +386,7 @@
 				piezas = piezas.concat(hijos.length ? hijos : [b]);
 			});
 			c.gsap.set(piezas, { opacity: 0, y: 30 });
+			c.marcarEntrada(piezas);
 			c.alEntrar(el, 0.45, function () {
 				c.gsap.to(piezas, {
 					opacity: 1, y: 0, duration: 0.55 * c.dur(op) + 0.5,
@@ -495,6 +522,7 @@
 
 		var v = c.dur(op);
 		c.gsap.set(piezas, { opacity: 0, y: 22 });
+		c.marcarEntrada(piezas);
 
 		function entrar(grupo, seguidas) {
 			// Pieza a pieza, 70 ms de separación. Todas de una vez, el mismo
@@ -695,6 +723,14 @@
 
 				nav.appendChild(flecha(1));
 				document.body.appendChild(nav);
+
+				// La etiqueta que sale al pasar el ratón o con el foco se cierra con
+				// Escape y vuelve al salir del todo o al mover el foco (WCAG 1.4.13).
+				document.addEventListener('keydown', function (e) {
+					if (e.key === 'Escape' || e.key === 'Esc') { nav.classList.add('cm-puntos--sin-etiqueta'); }
+				});
+				nav.addEventListener('mouseleave', function () { nav.classList.remove('cm-puntos--sin-etiqueta'); });
+				nav.addEventListener('focusin', function () { nav.classList.remove('cm-puntos--sin-etiqueta'); });
 			}
 		}
 	}

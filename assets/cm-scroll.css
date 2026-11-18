@@ -150,7 +150,11 @@
 
 .cm-etiqueta {
 	position: absolute;
-	right: 20px;
+	/* La caja llega hasta el punto (9 + 11 = los 20 px de siempre hasta el
+	   texto), así el ratón puede pasar del punto a la etiqueta sin que se
+	   cierre (WCAG 1.4.13). */
+	right: 9px;
+	padding-right: 11px;
 	white-space: nowrap;
 	font-size: 10px;
 	letter-spacing: .18em;
@@ -162,9 +166,14 @@
 	pointer-events: none;
 }
 
-.cm-punto-env:hover .cm-etiqueta { opacity: 1; transform: translateX(0); }
+.cm-punto-env:hover .cm-etiqueta,
+.cm-punto-env:focus-within .cm-etiqueta { opacity: 1; transform: translateX(0); pointer-events: auto; }
+.cm-puntos--sin-etiqueta .cm-etiqueta { opacity: 0 !important; pointer-events: none !important; }
 
+/* Con el teclado, el punto o la flecha que tiene el foco se ve entero y
+   enseña su etiqueta, igual que al pasar el ratón. En reposo no cambia. */
 .cm-puntos button:focus-visible {
+	opacity: 1;
 	outline: 2px solid var(--e-global-color-secondary, currentColor);
 	outline-offset: 4px;
 }

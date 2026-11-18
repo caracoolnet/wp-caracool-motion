@@ -82,8 +82,12 @@
 
 /* Píldora de cristal en el menú: sustituye al puntero de Elementor
    (subrayado, marco…). Cristal claro, como los botones de cristal. */
+.cm-pildora-caja {
+	position: relative;
+}
 .cm-menu-pildora {
 	position: relative;
+	z-index: 1;
 }
 .cm-menu-pildora > li {
 	position: relative;

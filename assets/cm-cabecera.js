@@ -39,6 +39,9 @@
 	// Una sola pieza por menú, que se mueve con transform y width. Sigue al
 	// cursor y al foco del teclado; al salir del menú vuelve a la página
 	// actual, y si no hay página actual en el menú se desvanece.
+	// La pieza va FUERA de la lista, justo antes del <ul>: una lista solo
+	// puede tener <li> como hijos (WCAG 1.3.1). Dentro, los validadores de
+	// accesibilidad la marcan como error.
 	function pildora(cab) {
 		var menus = cab.querySelectorAll('.elementor-nav-menu--main > .elementor-nav-menu');
 		Array.prototype.forEach.call(menus, function (ul) {
@@ -50,10 +53,12 @@
 				.filter(Boolean);
 			if (!enlaces.length) { return; }
 
+			var caja = ul.parentNode;
 			var p = document.createElement('span');
 			p.className = 'cm-pildora';
 			p.setAttribute('aria-hidden', 'true');
-			ul.insertBefore(p, ul.firstChild);
+			caja.insertBefore(p, ul);
+			caja.classList.add('cm-pildora-caja');
 
 			var actual = enlaces.filter(function (a) {
 				return a.classList.contains('elementor-item-active') || a.getAttribute('aria-current') === 'page';
@@ -61,11 +66,12 @@
 
 			function ir(a) {
 				if (!a) { p.classList.remove('cm-pildora--visible'); return; }
-				// Medido contra el menú: los <li> van posicionados y offsetLeft daría 0.
-				var r = a.getBoundingClientRect(), b = ul.getBoundingClientRect();
+				// Medido contra la caja que la contiene: los <li> van posicionados
+				// y offsetLeft daría 0.
+				var r = a.getBoundingClientRect(), b = caja.getBoundingClientRect();
 				p.style.width = r.width + 'px';
 				p.style.height = r.height + 'px';
-				p.style.transform = 'translate(' + (r.left - b.left - ul.clientLeft) + 'px,' + (r.top - b.top - ul.clientTop) + 'px)';
+				p.style.transform = 'translate(' + (r.left - b.left - caja.clientLeft) + 'px,' + (r.top - b.top - caja.clientTop) + 'px)';
 				p.classList.add('cm-pildora--visible');
 			}
 			function colocar() {
@@ -156,6 +162,15 @@
 
 		// Al abrir o cerrar el menú móvil, repintamos.
 		cab.addEventListener('click', function () { window.setTimeout(function () { pintar(ultimoY); }, 50); });
+
+		// Teclado: si el foco entra en la cabecera mientras está escondida
+		// (volviendo atrás con Mayúsculas + Tab), reaparece para que se vea
+		// qué enlace tiene el foco (WCAG 2.4.7). Con ratón no cambia nada.
+		cab.addEventListener('focusin', function () {
+			direccion = -1;
+			ancla = ultimoY;
+			cab.classList.remove('cm-cabecera--oculta');
+		});
 
 		pintar(ultimoY);
 	}
