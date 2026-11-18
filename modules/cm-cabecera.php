@@ -34,6 +34,9 @@ class Caracool_Motion_Cabecera {
 
 	const OPTION_KEY = 'caracool_motion_cabecera';
 
+	/** La cabecera escondida mientras la intro está en marcha (ajuste «Espera a la intro»). */
+	const CSS_TRAS_INTRO = 'html.cm-intro-activa [data-elementor-type="header"],html.cm-intro-activa header.elementor-location-header{transform:translateY(calc(-100% - 2px));}';
+
 	public function __construct() {
 		add_action( 'wp_enqueue_scripts', array( $this, 'registrar_assets' ) );
 		add_action( 'wp_footer', array( $this, 'imprimir_assets' ), 5 );
@@ -103,6 +106,15 @@ class Caracool_Motion_Cabecera {
 		wp_enqueue_style( 'cm-cabecera' );
 		wp_enqueue_script( 'cm-cabecera' );
 
+		// Con la intro en marcha, la cabecera espera escondida arriba y baja
+		// cuando termina. La intro marca <html> con «cm-intro-activa» antes del
+		// primer pintado y quita la marca al acabar; la transición es la misma
+		// con la que la cabecera reaparece al subir. Sin intro en la página,
+		// la marca no llega a ponerse y esta regla no hace nada.
+		if ( 'si' === $c['intro'] ) {
+			wp_add_inline_style( 'cm-cabecera', self::CSS_TRAS_INTRO );
+		}
+
 		wp_add_inline_script(
 			'cm-cabecera',
 			'window.CaracoolMotionCabecera = ' . wp_json_encode(
@@ -156,6 +168,7 @@ class Caracool_Motion_Cabecera {
 			'linea'  => $linea,
 			'estilo' => ( isset( $g['estilo'] ) && 'cristal' === $g['estilo'] ) ? 'cristal' : 'solido',
 			'menu'   => ( isset( $g['menu'] ) && 'pildora' === $g['menu'] ) ? 'pildora' : 'elementor',
+			'intro'  => ( isset( $g['intro'] ) && 'si' === $g['intro'] ) ? 'si' : 'no',
 		);
 	}
 
@@ -200,6 +213,14 @@ class Caracool_Motion_Cabecera {
 					<div>
 						<input type="number" name="cm_cabecera[umbral]" id="cm_cabecera_umbral" step="10" min="40" max="800" value="<?php echo esc_attr( $c['umbral'] ); ?>">
 						<span class="cm-hint">Píxeles de scroll. Por encima de este punto la cabecera se esconde al bajar y toma el fondo sólido al reaparecer; por debajo vuelve a ser transparente. Entre 40 y 800. Recomendado: 120.</span>
+					</div>
+				</div>
+
+				<div class="cm-campo">
+					<label for="cm_cabecera_intro">Espera a la intro</label>
+					<div>
+						<label class="cm-sw"><input type="checkbox" name="cm_cabecera[intro]" id="cm_cabecera_intro" value="si" <?php checked( 'si', $c['intro'] ); ?>><span></span></label>
+						<span class="cm-hint">Mientras se ve la intro de entrada, la cabecera se queda escondida arriba y baja cuando termina. Sirve cuando la intro deja ver la página, por ejemplo con una sábana de un color transparente. En las páginas sin intro, y cuando la intro ya se ha visto, no cambia nada.</span>
 					</div>
 				</div>
 
@@ -290,6 +311,7 @@ class Caracool_Motion_Cabecera {
 				'linea'  => $linea,
 				'estilo' => ( isset( $post['estilo'] ) && 'cristal' === $post['estilo'] ) ? 'cristal' : 'solido',
 				'menu'   => ( isset( $post['menu'] ) && 'pildora' === $post['menu'] ) ? 'pildora' : 'elementor',
+				'intro'  => ( isset( $post['intro'] ) && 'si' === $post['intro'] ) ? 'si' : 'no',
 			)
 		);
 	}
