@@ -56,7 +56,7 @@
 			if (x.hasAttribute('data-cm-entra')) {
 				x.removeAttribute('data-cm-entra');
 				gsap.killTweensOf(x);
-				gsap.set(x, { clearProps: 'opacity,transform' });
+				gsap.set(x, { clearProps: SOLTAR });
 			}
 			x = x.parentElement;
 		}
@@ -66,8 +66,22 @@
 	   una pieza espera su turno en el escalonado: si el foco llega antes,
 	   se muestra al momento. Cuando ya ha entrado, quitarla no cambia nada. */
 	function marcarEntrada(piezas) {
-		piezas.forEach(function (p) { p.setAttribute('data-cm-entra', ''); });
+		piezas.forEach(function (p) {
+			p.setAttribute('data-cm-entra', '');
+			p.style.transition = 'none';
+		});
 	}
+
+	/* Por qué se quita la transición. Con el marcado optimizado de Elementor
+	   el widget ya no lleva .elementor-widget-container, y su transición
+	   («transform .4s», la de los efectos de transformación al pasar) recae
+	   en el propio widget, que es justo lo que mueve la entrada. GSAP cambia
+	   el transform en cada fotograma y la transición de CSS lo va siguiendo
+	   con retraso: la pieza se ve ya entera cuando todavía le quedan quince
+	   píxeles por subir, y se nota como un salto. Mientras dura la entrada
+	   la pieza va sin transición; al acabar se le devuelve soltando el
+	   estilo en línea junto con la opacidad y el transform. */
+	var SOLTAR = 'opacity,transform,transition';
 
 	/* ScrollTrigger solo viaja si la página lleva algún efecto atado al scroll
 	   (cortina, crece, parallax). Las páginas que solo usan entrada o marca no
@@ -75,6 +89,12 @@
 	   él tiene que mirar antes si está. */
 	var hayST = typeof window.ScrollTrigger !== 'undefined';
 	if (hayST) { gsap.registerPlugin(ScrollTrigger); }
+
+	/* Las entradas de titulares (por líneas, cortina, relleno) viven en
+	   cm-titular.js, que solo viaja a las páginas con algún encabezado que
+	   las use y se carga antes que este archivo. Sin él, aquí no cambia
+	   nada: un encabezado es una pieza más. */
+	var TITULAR = window.CaracoolMotionTitular || null;
 
 	// ── Utilidades compartidas que reciben todos los efectos ────────────
 
@@ -390,7 +410,7 @@
 			c.alEntrar(el, 0.45, function () {
 				c.gsap.to(piezas, {
 					opacity: 1, y: 0, duration: 0.55 * c.dur(op) + 0.5,
-					ease: 'power3.out', stagger: 0.09, clearProps: 'opacity,transform'
+					ease: 'power3.out', stagger: 0.09, clearProps: SOLTAR
 				});
 			});
 		}
@@ -520,21 +540,49 @@
 		var piezas = c.piezasDe(el);
 		if (!piezas.length) { return; }
 
+		// Un encabezado con entrada propia (por líneas, cortina, relleno) no
+		// sube con las demás piezas: espera su turno y se anima a su manera.
+		var esTitular = function (p) { return !!(TITULAR && TITULAR.es(p)); };
+		var resto = piezas.filter(function (p) { return !esTitular(p); });
+
 		var v = c.dur(op);
-		c.gsap.set(piezas, { opacity: 0, y: 22 });
-		c.marcarEntrada(piezas);
+		c.gsap.set(resto, { opacity: 0, y: 22 });
+		c.marcarEntrada(resto);
+		piezas.filter(esTitular).forEach(function (p) { TITULAR.esperar(p); });
 
 		function entrar(grupo, seguidas) {
 			// Pieza a pieza, 70 ms de separación. Todas de una vez, el mismo
 			// ritmo pero con techo: un bloque de treinta líneas no puede tardar
 			// dos segundos y medio en acabar de salir.
-			var salto = seguidas
-				? { amount: Math.min(0.07 * (grupo.length - 1), 1.2) }
-				: 0.07;
-			c.gsap.to(grupo, {
-				opacity: 1, y: 0,
-				duration: 0.6 * v + 0.3, ease: 'power3.out', stagger: salto,
-				clearProps: 'opacity,transform'
+			if (!grupo.some(esTitular)) {
+				var salto = seguidas
+					? { amount: Math.min(0.07 * (grupo.length - 1), 1.2) }
+					: 0.07;
+				c.gsap.to(grupo, {
+					opacity: 1, y: 0,
+					duration: 0.6 * v + 0.3, ease: 'power3.out', stagger: salto,
+					clearProps: SOLTAR
+				});
+				return;
+			}
+
+			// Con un titular en el grupo se va pieza a pieza, en orden de
+			// lectura: lo que va delante entra a su ritmo, el titular hace su
+			// entrada y lo de detrás espera a que el titular le ceda el paso,
+			// con un techo para que un titular largo no retenga el bloque.
+			var paso = seguidas ? Math.min(0.07, 1.2 / Math.max(1, grupo.length - 1)) : 0.07;
+			var t = 0;
+			grupo.forEach(function (p) {
+				if (esTitular(p)) {
+					t += Math.min(TITULAR.entrar(p, t), 1.2);
+					return;
+				}
+				c.gsap.to(p, {
+					opacity: 1, y: 0, delay: t,
+					duration: 0.6 * v + 0.3, ease: 'power3.out',
+					clearProps: SOLTAR
+				});
+				t += paso;
 			});
 		}
 
@@ -637,6 +685,21 @@
 	// quitado y puesto». Las entradas esperan a cm:intro:sale (ver alEntrar).
 	CM.aplicar();
 	CM._listo = true;
+
+	// Los titulares con entrada propia que no están dentro de un bloque con
+	// «Entrada escalonada» entran solos, cada uno al llegar a él. Dentro de
+	// una cortina o de «La foto crece» no se animan: ahí el contenido ya
+	// llega con el movimiento de la sección, y un titular que además
+	// esperase su turno se quedaría sin ver.
+	if (TITULAR) {
+		Array.prototype.forEach.call(document.querySelectorAll(TITULAR.SELECTOR), function (w) {
+			if (w._cmTitular || !TITULAR.es(w)) { return; }
+			if (w.closest('[data-cm-efecto="cortina"], [data-cm-efecto="crece"]')) { return; }
+			TITULAR.esperar(w);
+			alLlegar(w, function () { TITULAR.entrar(w, 0); });
+		});
+	}
+
 	// Cada pieza ya está donde tiene que estar: se puede quitar la tapa.
 	destapar();
 	document.addEventListener('cm:intro:fin', function () { if (hayST) { ScrollTrigger.refresh(); } }, { once: true });

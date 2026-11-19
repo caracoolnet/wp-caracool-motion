@@ -1,0 +1,109 @@
+/* Caracool Motion — Titulares
+   ───────────────────────────────────────────────────────────────────────
+   Entradas de un encabezado, línea a línea. Solo estructura: el color del
+   titular es el que tiene en Elementor y el de la cortina llega en
+   --cm-titular-color, que escribe el control. Sin ese control, el color de
+   Énfasis del Kit.
+
+   Las cajas .cm-ln, .cm-lni y .cm-tx las monta cm-titular.js al empezar la
+   entrada y las quita al terminar. Fuera de ese rato no existen.          */
+
+/* ── Mientras espera su turno ──────────────────────────────────────────
+   Por líneas y con cortina, el titular no se ve hasta que entra. Con
+   relleno está desde el principio, apagado.
+
+   Se esconde con opacidad y no con «visibility: hidden»: así sigue en el
+   orden del tabulador y en la lista de encabezados de un lector de
+   pantalla. Si el foco cae en un enlace suyo, cm-titular.js lo muestra.   */
+
+.cm-titular-espera.cm-titular-lineas .elementor-heading-title,
+.cm-titular-espera.cm-titular-cortina .elementor-heading-title {
+	opacity: 0;
+}
+
+.cm-titular-espera.cm-titular-relleno .elementor-heading-title {
+	opacity: .3;
+}
+
+/* ── Las cajas de cada línea ───────────────────────────────────────────
+   La línea es un bloque y lo que se mueve va dentro, del ancho justo del
+   texto. Sin salto de línea: las palabras ya están repartidas.           */
+
+.cm-ln {
+	display: block;
+}
+
+.cm-lni {
+	display: inline-block;
+	position: relative;
+	vertical-align: top;
+	white-space: nowrap;
+}
+
+/* ── Por líneas ────────────────────────────────────────────────────────
+   La línea hace de máscara. El recorte es algo más grande que la caja: con
+   un interlineado apretado, los rabos de la g o la tilde de una mayúscula
+   se salen de ella y una máscara justa los cortaría. Va con clip-path y no
+   con relleno y margen negativo, porque los márgenes de dos líneas seguidas
+   se funden y el titular crecería mientras entra.                         */
+
+.cm-titular-lineas .cm-ln {
+	overflow: hidden;
+}
+
+@supports ((-webkit-clip-path: inset(0)) or (clip-path: inset(0))) {
+
+	.cm-titular-lineas .cm-ln {
+		overflow: visible;
+		-webkit-clip-path: inset(-.14em -.08em);
+		clip-path: inset(-.14em -.08em);
+	}
+}
+
+/* ── Cortina de color ──────────────────────────────────────────────────
+   La banda cubre la línea y un poco más, por el mismo motivo.             */
+
+.cm-banda {
+	position: absolute;
+	top: -.08em;
+	right: -.06em;
+	bottom: -.08em;
+	left: -.06em;
+	background: var(--cm-titular-color, var(--e-global-color-accent, currentColor));
+	transform: scaleX(0);
+	pointer-events: none;
+}
+
+/* ── Relleno ───────────────────────────────────────────────────────────
+   Una máscara de dos mitades, entera a la izquierda y apagada a la
+   derecha, el doble de ancha que la línea. cm-titular.js lleva --cm-lleno
+   de 0 a 1 y la máscara se desplaza. Los dos valores del degradado son
+   opacidades de la máscara, no colores: el texto conserva el suyo.
+
+   Dentro de @supports: un navegador sin máscaras enseña el titular entero
+   desde el principio.                                                     */
+
+@supports ((-webkit-mask-image: none) or (mask-image: none)) {
+
+	.cm-titular-relleno .cm-lni {
+		padding: .14em .08em;
+		margin: -.14em -.08em;
+		-webkit-mask-image: linear-gradient(90deg, #000 50%, rgba(0, 0, 0, .3) 50%);
+		mask-image: linear-gradient(90deg, #000 50%, rgba(0, 0, 0, .3) 50%);
+		-webkit-mask-size: 200% 100%;
+		mask-size: 200% 100%;
+		-webkit-mask-repeat: no-repeat;
+		mask-repeat: no-repeat;
+		-webkit-mask-position: calc(100% - var(--cm-lleno, 0) * 100%) 0;
+		mask-position: calc(100% - var(--cm-lleno, 0) * 100%) 0;
+	}
+}
+
+/* Con el movimiento reducido el JavaScript no llega a arrancar. Si la clase
+   de espera estuviera puesta por lo que fuera, el titular se ve igual. Lo
+   mismo al imprimir.                                                      */
+@media (prefers-reduced-motion: reduce), print {
+	.cm-titular-espera .elementor-heading-title {
+		opacity: 1 !important;
+	}
+}

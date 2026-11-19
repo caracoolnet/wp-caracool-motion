@@ -1,0 +1,58 @@
+/* Caracool Motion — Texto
+   ───────────────────────────────────────────────────────────────────────
+   Relleno de izquierda a derecha al pasar el cursor por un encabezado con
+   enlace. Solo estructura, ni un color de marca: el de reposo es el que el
+   encabezado ya tiene (currentColor) y el de relleno llega en
+   --cm-texto-relleno, que escribe el control de Elementor. Sin ese
+   control, el color de Énfasis del Kit.
+
+   Cómo va: el fondo del enlace es un degradado de dos mitades, relleno a
+   la izquierda y reposo a la derecha, el doble de ancho que el texto y
+   recortado con la forma de las letras. En reposo se ve la mitad derecha;
+   al pasar, el fondo se desplaza y entra la izquierda.
+
+   Va sobre el enlace y no sobre el título porque la caja del enlace mide
+   justo lo que el texto. El título es un bloque del ancho del contenedor.
+
+   Todo dentro de @supports: un navegador sin background-clip: text deja
+   el texto como estaba, en lugar de volverlo transparente.               */
+
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+
+	.cm-texto-relleno .elementor-heading-title a {
+		background-image: linear-gradient(
+			90deg,
+			var(--cm-texto-relleno, var(--e-global-color-accent, currentColor)) 50%,
+			currentColor 50%
+		);
+		background-size: 200% 100%;
+		background-position: 100% 0;
+		background-repeat: no-repeat;
+		-webkit-background-clip: text;
+		background-clip: text;
+		-webkit-text-fill-color: transparent;
+		transition: background-position var(--cm-texto-vel, .45s) cubic-bezier(.22, 1, .36, 1);
+	}
+
+	.cm-texto-relleno .elementor-heading-title a:hover,
+	.cm-texto-relleno .elementor-heading-title a:focus-visible,
+	.cm-texto-relleno .elementor-heading-title a:active {
+		background-position: 0 0;
+	}
+}
+
+/* Con el movimiento reducido el color cambia igual, pero sin recorrido. */
+@media (prefers-reduced-motion: reduce) {
+	.cm-texto-relleno .elementor-heading-title a {
+		transition: none;
+	}
+}
+
+/* Con alto contraste y al imprimir no se pintan los fondos: sin esto el
+   texto, que es transparente, desaparecería.                             */
+@media (forced-colors: active), print {
+	.cm-texto-relleno .elementor-heading-title a {
+		background: none;
+		-webkit-text-fill-color: currentColor;
+	}
+}
