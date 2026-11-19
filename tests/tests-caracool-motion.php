@@ -299,6 +299,9 @@ comprueba( 'sin desenfoque en la entrada', false === strpos( $js, 'blur(7px)' ) 
 comprueba( 'los dos disparos miran por el mismo sitio', false !== strpos( $js, 'function vigilar(' ) && substr_count( $js, 'vigilar(' ) >= 3 );
 comprueba( 'red de seguridad para lo pegado al final de la página', false !== strpos( $js, 'var ENTERO = { threshold: 1 }' ) && false !== strpos( $js, 'intersectionRatio < 0.99' ) );
 comprueba( 'la línea de entrada sigue en el 12 % de abajo', false !== strpos( $js, "rootMargin: '0px 0px -12% 0px'" ) );
+comprueba( 'las piezas entran sin la transición de CSS del widget', false !== strpos( $js, "p.style.transition = 'none';" ) );
+comprueba( 'y la recuperan al terminar', false !== strpos( $js, "var SOLTAR = 'opacity,transform,transition';" ) && 4 === substr_count( $js, 'clearProps: SOLTAR' ) );
+comprueba( 'ninguna entrada suelta los estilos sin devolver la transición', false === strpos( $js, "clearProps: 'opacity,transform'" ) );
 
 echo "\n=== La foto crece y su línea de avance ===\n";
 $css = file_get_contents( CM_RAIZ . '/assets/cm-scroll.css' );
@@ -319,11 +322,13 @@ foreach ( $GLOBALS['acciones'] as $a ) {
 	if ( 'wp_head' === $a[0] && is_array( $a[1] ) && 'imprimir_guarda' === $a[1][1] ) { $en_head = true; }
 }
 comprueba( 'la guarda se imprime en la cabecera', $en_head );
-comprueba( 'tapa las piezas, no el contenedor (la foto de fondo se ve)', false !== strpos( $php_scroll, '[data-cm-efecto="entrada"] .elementor-widget{visibility:hidden}' ) );
+comprueba( 'tapa las piezas, no el contenedor (la foto de fondo se ve)', (bool) preg_match( '/html\.cm-entrando \[data-cm-efecto="entrada"\] \.elementor-widget[,{][^}]*visibility:hidden\}/', $php_scroll ) );
 comprueba( 'la guarda no se pone con movimiento reducido', false !== strpos( $php_scroll, 'prefers-reduced-motion: reduce' ) && false !== strpos( $php_scroll, 'cm-entrando' ) );
 comprueba( 'y se quita sola si el JS no arranca', false !== strpos( $php_scroll, '},2000);' ) );
 comprueba( 'la guarda no se imprime dentro del editor', false !== strpos( $php_scroll, 'public function imprimir_guarda' ) && 1 < substr_count( $php_scroll, 'if ( self::editor_elementor() ) {' ) );
-comprueba( 'el JS destapa al terminar de colocar las piezas', false !== strpos( $js, 'function destapar()' ) && false !== strpos( $js, "CM._listo = true;\n\t// Cada pieza ya está donde tiene que estar: se puede quitar la tapa.\n\tdestapar();" ) );
+$p_listo    = strpos( $js, 'CM._listo = true;' );
+$p_destapar = strpos( $js, "// Cada pieza ya está donde tiene que estar: se puede quitar la tapa.\n\tdestapar();" );
+comprueba( 'el JS destapa al terminar de colocar las piezas', false !== strpos( $js, 'function destapar()' ) && false !== $p_listo && false !== $p_destapar && $p_listo < $p_destapar );
 comprueba( 'y también destapa si no puede animar', false !== strpos( $js, "if (reducido || typeof window.gsap === 'undefined') { destapar(); return; }" ) );
 
 echo "\n=== Cada página se lleva solo lo suyo ===\n";
@@ -406,6 +411,150 @@ comprueba( 'una página sin Elementor ni motor no recibe ni un byte', ! in_array
 cm_montar_pagina( array( 313 => cm_datos( array( 'entrada' ) ) ), 'no', 313 );
 $m->imprimir_assets();
 comprueba( 'una página con efectos sí recibe el JS aunque el motor esté apagado', in_array( 'cm-scroll', $GLOBALS['encolados'], true ) );
+
+echo "\n=== Texto · relleno al pasar ===\n";
+/*
+ * El relleno al pasar no tiene ajustes de sitio ni JavaScript: un control en
+ * el widget Encabezado y una hoja que solo viaja a las páginas que lo usan.
+ * Igual que arriba, no se pasa por el render: se lee el documento guardado.
+ */
+comprueba( 'el módulo Texto está cargado', class_exists( 'Caracool_Motion_Texto' ) );
+$fxt = Caracool_Motion_Texto::efectos();
+comprueba( 'el relleno está en su catálogo, con etiqueta y ayuda', isset( $fxt['relleno'] ) && ! empty( $fxt['relleno']['etiqueta'] ) && ! empty( $fxt['relleno']['ayuda'] ) );
+$cuelga = false;
+foreach ( $GLOBALS['acciones'] as $a ) {
+	if ( 'elementor/element/heading/section_title_style/after_section_end' === $a[0] && is_array( $a[1] ) && $a[1][0] instanceof Caracool_Motion_Texto ) { $cuelga = true; }
+}
+comprueba( 'sus controles cuelgan del estilo del widget Encabezado', $cuelga );
+
+function cm_encabezado( $valor ) {
+	return '[{"id":"c1","elType":"container","settings":{},"elements":[{"id":"h1","elType":"widget","widgetType":"heading","settings":{"title":"Menú","cm_texto":"' . $valor . '"},"elements":[]}]}]';
+}
+$t = new Caracool_Motion_Texto();
+
+cm_montar_pagina( array( 313 => cm_datos( array( 'entrada' ) ) ), 'si', 313 );
+$t->imprimir_assets();
+comprueba( 'una página sin encabezados con relleno no se lleva cm-texto', ! in_array( 'cm-texto', $GLOBALS['encolados'], true ), implode( ',', $GLOBALS['encolados'] ) );
+
+cm_montar_pagina( array( 313 => cm_encabezado( 'relleno' ) ), 'si', 313 );
+$t->imprimir_assets();
+comprueba( 'con un encabezado con relleno, sí', in_array( 'cm-texto', $GLOBALS['encolados'], true ) );
+
+cm_montar_pagina( array( 313 => cm_datos( array( 'entrada' ) ), 10 => cm_encabezado( 'relleno' ) ), 'si', 313 );
+$t->imprimir_assets();
+comprueba( 'también si el encabezado está en la cabecera, el pie o una ventana emergente', in_array( 'cm-texto', $GLOBALS['encolados'], true ) );
+
+cm_montar_pagina( array( 313 => cm_encabezado( '' ) ), 'si', 313 );
+$t->imprimir_assets();
+comprueba( 'un encabezado con el efecto en «Nada» no cuenta', ! in_array( 'cm-texto', $GLOBALS['encolados'], true ) );
+
+cm_montar_pagina( array( 313 => cm_encabezado( 'inventado' ) ), 'si', 313 );
+$t->imprimir_assets();
+comprueba( 'un efecto de texto que no existe tampoco', ! in_array( 'cm-texto', $GLOBALS['encolados'], true ) );
+
+$hoja = file_get_contents( CM_RAIZ . '/assets/cm-texto.css' );
+comprueba( 'la hoja no lleva ni un color escrito a mano', ! preg_match( '/#[0-9a-fA-F]{3,8}\b|rgba?\(/', $hoja ) );
+comprueba( 'el relleno va dentro de @supports', false !== strpos( $hoja, '@supports ((-webkit-background-clip: text) or (background-clip: text))' ) );
+comprueba( 'responde al foco del teclado', false !== strpos( $hoja, ':focus-visible' ) );
+comprueba( 'con movimiento reducido no hay recorrido', (bool) preg_match( '/prefers-reduced-motion: reduce\)\s*\{[^}]*\{[^}]*transition:\s*none/s', $hoja ) );
+comprueba( 'con alto contraste y al imprimir el texto no se queda transparente', (bool) preg_match( '/forced-colors: active\), print\s*\{[^}]*\{[^}]*-webkit-text-fill-color:\s*currentColor/s', $hoja ) );
+comprueba( 'la hoja pesa menos de 3 KB', strlen( $hoja ) < 3072, strlen( $hoja ) . ' bytes' );
+comprueba( 'el relleno al pasar no trae JavaScript', ! file_exists( CM_RAIZ . '/assets/cm-texto.js' ) );
+$principal = file_get_contents( CM_RAIZ . '/caracool-motion.php' );
+comprueba( 'el archivo principal carga cm-texto.php', false !== strpos( $principal, "'cm-texto.php'" ) );
+
+echo "\n=== Texto · entradas de titulares ===\n";
+/*
+ * Tres entradas línea a línea para un encabezado. El módulo Texto pone los
+ * controles y dice si la página las usa; el módulo Scroll es quien encola
+ * `cm-titular.js`, como dependencia de su script, porque es él quien vigila
+ * la pantalla y da paso a cada titular.
+ */
+$ent = Caracool_Motion_Texto::entradas();
+comprueba( 'las tres entradas están en su catálogo', array( 'lineas', 'cortina', 'relleno' ) === array_keys( $ent ) );
+foreach ( $ent as $clave => $def ) {
+	comprueba( "la entrada '$clave' tiene etiqueta y ayuda", ! empty( $def['etiqueta'] ) && ! empty( $def['ayuda'] ) );
+}
+
+function cm_titular( $valor ) {
+	return '[{"id":"c1","elType":"container","settings":{},"elements":[{"id":"h1","elType":"widget","widgetType":"heading","settings":{"title":"Titular","cm_titular":"' . $valor . '"},"elements":[]}]}]';
+}
+function cm_encolo( $nombre ) {
+	return in_array( $nombre, $GLOBALS['encolados'], true );
+}
+
+cm_montar_pagina( array( 313 => cm_datos( array( 'entrada' ) ) ), 'no', 313 );
+$m->imprimir_assets();
+comprueba( 'una página sin titulares con entrada no se lleva cm-titular', ! in_array( 'cm-titular', cm_deps(), true ) && ! cm_encolo( 'cm-titular' ), implode( ',', cm_deps() ) );
+
+foreach ( array_keys( $ent ) as $clave ) {
+	cm_montar_pagina( array( 313 => cm_titular( $clave ) ), 'no', 313 );
+	$m->imprimir_assets();
+	comprueba( "un encabezado con «{$clave}» trae el script de scroll con cm-titular delante", cm_encolo( 'cm-scroll' ) && array( 'cm-gsap', 'cm-titular' ) === cm_deps(), implode( ',', cm_deps() ) );
+	comprueba( "y su hoja ({$clave})", cm_encolo( 'cm-titular' ) );
+}
+
+cm_montar_pagina( array( 313 => cm_titular( 'lineas' ) ), 'no', 313 );
+$m->imprimir_assets();
+comprueba( 'un titular con entrada no pide ScrollTrigger ni Lenis', ! in_array( 'cm-scrolltrigger', cm_deps(), true ) && ! in_array( 'cm-lenis', cm_deps(), true ), implode( ',', cm_deps() ) );
+
+cm_montar_pagina( array( 313 => cm_datos( array( 'cortina' ) ), 10 => cm_titular( 'cortina' ) ), 'si', 313 );
+$m->imprimir_assets();
+comprueba( 'también si el encabezado está en la cabecera o en el pie, y convive con lo demás', array( 'cm-gsap', 'cm-scrolltrigger', 'cm-lenis', 'cm-titular' ) === cm_deps(), implode( ',', cm_deps() ) );
+
+cm_montar_pagina( array( 313 => cm_titular( '' ) ), 'no', 313 );
+$m->imprimir_assets();
+comprueba( 'un encabezado con la entrada en «Nada» no cuenta', ! cm_encolo( 'cm-scroll' ) && ! cm_encolo( 'cm-titular' ), implode( ',', $GLOBALS['encolados'] ) );
+
+cm_montar_pagina( array( 313 => cm_titular( 'inventada' ) ), 'no', 313 );
+$m->imprimir_assets();
+comprueba( 'una entrada que no existe tampoco', ! cm_encolo( 'cm-scroll' ) && ! cm_encolo( 'cm-titular' ) );
+
+cm_montar_pagina( array( 313 => cm_encabezado( 'relleno' ) ), 'no', 313 );
+$m->imprimir_assets();
+comprueba( 'el relleno al pasar, solo, sigue sin traer JavaScript', ! cm_encolo( 'cm-scroll' ) && ! cm_encolo( 'cm-titular' ) );
+
+cm_montar_pagina( array( 313 => cm_titular( 'relleno' ) ), 'no', 313 );
+$t->imprimir_assets();
+comprueba( 'y la entrada con relleno no trae la hoja del relleno al pasar', ! cm_encolo( 'cm-texto' ) );
+
+ob_start();
+$m->imprimir_guarda();
+$guarda = ob_get_clean();
+comprueba( 'la guarda tapa los titulares por líneas y con cortina', false !== strpos( $guarda, 'html.cm-entrando .cm-titular-lineas,html.cm-entrando .cm-titular-cortina{visibility:hidden}' ) );
+comprueba( 'y deja apagado, no escondido, el de relleno', false !== strpos( $guarda, 'html.cm-entrando .cm-titular-relleno .elementor-heading-title{opacity:.3}' ) );
+
+$jt = file_get_contents( CM_RAIZ . '/assets/cm-titular.js' );
+comprueba( 'cm-titular.js conoce las mismas entradas que el catálogo', false !== strpos( $jt, "var EFECTOS = ['lineas', 'cortina', 'relleno'];" ) );
+comprueba( 'no hace nada por su cuenta: se ofrece a cm-scroll.js', false !== strpos( $jt, 'window.CaracoolMotionTitular = {' ) && false === strpos( $jt, 'IntersectionObserver' ) );
+comprueba( 'guarda los nodos originales y los devuelve al terminar', false !== strpos( $jt, 'original.appendChild(titulo.firstChild)' ) && false !== strpos( $jt, 'titulo.appendChild(original);' ) && false !== strpos( $jt, 'partes.restaurar();' ) );
+comprueba( 'no restaura dos veces (la segunda vaciaría el titular)', false !== strpos( $jt, 'if (devuelto) { return; }' ) );
+comprueba( 'un espacio duro no parte palabra', false !== strpos( $jt, 'var ESPACIOS = /([ \t\r\n\f]+)/;' ) );
+comprueba( 'las copias de etiquetas no repiten id', false !== strpos( $jt, "copia.removeAttribute('id');" ) );
+comprueba( 'si el foco cae en un titular que espera, se muestra', false !== strpos( $jt, "document.addEventListener('focusin'" ) && false !== strpos( $jt, "x._cmTitular === 'espera'" ) );
+comprueba( 'si partir falla, el titular se queda puesto', false !== strpos( $jt, 'try { partes = partir(titulo); } catch (e) { partes = null; }' ) && false !== strpos( $jt, 'if (!partes) { mostrar(w); return 0; }' ) );
+comprueba( 'y si falla al animar, también', (bool) preg_match( '/catch \(e\) \{\s*tl\.kill\(\);\s*w\._cmTitularTl = null;\s*partes\.restaurar\(\);\s*mostrar\(w\);/s', $jt ) );
+
+comprueba( 'cm-scroll.js funciona igual sin cm-titular.js', false !== strpos( $js, 'var TITULAR = window.CaracoolMotionTitular || null;' ) && false !== strpos( $js, 'return !!(TITULAR && TITULAR.es(p));' ) );
+comprueba( 'en la entrada escalonada el titular no sube con las demás piezas', false !== strpos( $js, 'c.gsap.set(resto, { opacity: 0, y: 22 });' ) && false !== strpos( $js, 'c.marcarEntrada(resto);' ) );
+comprueba( 'sin titular en el grupo, la entrada va por el camino de siempre', false !== strpos( $js, 'if (!grupo.some(esTitular)) {' ) );
+comprueba( 'lo que va detrás de un titular espera, con techo', false !== strpos( $js, 't += Math.min(TITULAR.entrar(p, t), 1.2);' ) );
+comprueba( 'un titular suelto entra al llegar a él', false !== strpos( $js, 'alLlegar(w, function () { TITULAR.entrar(w, 0); });' ) );
+comprueba( 'dentro de una cortina o de «La foto crece» no se anima', false !== strpos( $js, "w.closest('[data-cm-efecto=\"cortina\"], [data-cm-efecto=\"crece\"]')" ) );
+
+$ht = file_get_contents( CM_RAIZ . '/assets/cm-titular.css' );
+comprueba( 'la hoja no lleva ni un color de marca', ! preg_match( '/#[0-9a-fA-F]{6}\b/', $ht ) && false !== strpos( $ht, 'var(--cm-titular-color, var(--e-global-color-accent, currentColor))' ) );
+comprueba( 'el titular que espera se esconde con opacidad, no con visibility', false === strpos( $ht, 'visibility' ) || false !== strpos( $ht, '«visibility: hidden»' ) );
+comprueba( 'el apagado del relleno es el mismo en la hoja y en la guarda', false !== strpos( $ht, "opacity: .3;" ) && false !== strpos( $ht, 'rgba(0, 0, 0, .3)' ) );
+comprueba( 'la máscara de «por líneas» no usa márgenes (se funden y el titular crecería)', (bool) preg_match( '/\.cm-titular-lineas \.cm-ln \{[^}]*clip-path: inset\(-\.14em -\.08em\)/s', $ht ) && ! preg_match( '/\.cm-titular-lineas \.cm-ln \{[^}]*margin/s', $ht ) );
+comprueba( 'el relleno va dentro de @supports', false !== strpos( $ht, '@supports ((-webkit-mask-image: none) or (mask-image: none))' ) );
+comprueba( 'con movimiento reducido y al imprimir el titular se ve', (bool) preg_match( '/prefers-reduced-motion: reduce\), print\s*\{[^}]*\{[^}]*opacity:\s*1 !important/s', $ht ) );
+comprueba( 'la hoja pesa menos de 5 KB', strlen( $ht ) < 5120, strlen( $ht ) . ' bytes' );
+comprueba( 'el script pesa menos de 12 KB', strlen( $jt ) < 12288, strlen( $jt ) . ' bytes' );
+
+$php_texto = file_get_contents( CM_RAIZ . '/modules/cm-texto.php' );
+comprueba( 'las clases del widget son las que lee cm-titular.js', false !== strpos( $php_texto, "'prefix_class' => 'cm-titular-'," ) && false !== strpos( $php_texto, "'prefix_class' => 'cm-titular-vel-'," ) );
+comprueba( 'el color de la cortina usa el selector nativo con globales', (bool) preg_match( "/'cm_titular_color',\s*array\([^;]*Controls_Manager::COLOR[^;]*'global'\s*=>\s*array\( 'active' => true \)[^;]*--cm-titular-color/s", $php_texto ) );
 
 echo "\n=== Pista para el primer lote ===\n";
 comprueba( 'lo que ya se ve al cargar espera a que la página termine', false !== strpos( $js, 'function cuandoAsiente(' ) && false !== strpos( $js, "window.addEventListener('load', asentar" ) );
