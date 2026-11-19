@@ -1,5 +1,92 @@
 # Changelog — Caracool Motion
 
+## 0.12.0 · 19 de noviembre de 2026
+
+Tres entradas para titulares. Se eligen encabezado por encabezado y vienen
+sin poner, así que en las webs que ya usan Motion no cambia nada.
+
+- **Texto · Al entrar en pantalla.** El titular entra línea a línea cuando
+  llega a la pantalla. Se elige en Elementor, en cada encabezado:
+  **Estilo → Caracool Motion → Al entrar en pantalla**.
+- **Por líneas.** Cada línea sale desde debajo de una máscara, una detrás
+  de otra. Sin fundido: la letra aparece ya nítida.
+- **Cortina de color.** Una banda de color cruza cada línea de izquierda a
+  derecha y, al seguir, deja el texto puesto. El color se elige entre los
+  globales del Kit; vacío, es el de Énfasis. Sobre un fondo de ese mismo
+  color hay que elegir otro.
+- **Relleno de izquierda a derecha.** El titular está desde el principio,
+  apagado, y cada línea se llena de izquierda a derecha. El apagado es una
+  máscara y no un color, así que vale igual sobre un fondo liso que sobre
+  una foto.
+- **Velocidad.** Lenta, media o rápida, como en los efectos de sección.
+- **Con «Entrada escalonada».** Dentro de un contenedor con ese efecto, el
+  titular ya no sube con las demás piezas: entra en su turno, a su manera,
+  y lo que va detrás espera a que termine, con un tope de 1,2 segundos.
+  Un contenedor sin titulares con entrada propia se comporta como antes.
+- **Suelto.** Fuera de un contenedor con entrada, el titular entra solo al
+  llegar a él. Dentro de una cortina lateral o de «La foto crece» no se
+  anima, porque ahí el contenido ya llega con el movimiento de la sección.
+- **El HTML no cambia.** El titular se parte en líneas en el navegador y
+  solo mientras dura la entrada. Los nodos originales se guardan aparte y
+  al terminar se devuelven tal cual, con sus enlaces. Lo que sirve la web
+  es el encabezado de siempre.
+- **Se parte al entrar, no al cargar.** Las líneas se miden justo antes de
+  animar, así que da igual que la ventana haya cambiado de ancho o que la
+  tipografía haya llegado tarde. Respeta los saltos de línea puestos a
+  mano, los espacios duros y las etiquetas de dentro (un enlace, una
+  cursiva).
+- **Accesibilidad.** Mientras espera, el titular se esconde con opacidad:
+  sigue en el orden del tabulador y en la lista de encabezados de un lector
+  de pantalla. Si el foco cae en un enlace suyo, se muestra al momento. Con
+  el movimiento reducido no hay entrada, y si el script no llegara a
+  cargar, el titular se ve puesto.
+- **Solo donde se usa.** `cm-titular.js` (unos 10 KB) y `cm-titular.css`
+  (unos 5 KB) viajan únicamente a las páginas con algún encabezado que
+  lleve una entrada. Los encola el módulo Scroll, que es quien vigila la
+  pantalla. No piden ScrollTrigger ni Lenis.
+- Un titular dentro de una ventana emergente no lleva entrada: las ventanas
+  se pintan después de decidir qué archivos carga la página.
+- La pestaña **Texto** del panel explica las dos cosas: al pasar el cursor
+  y al entrar en pantalla.
+
+## 0.11.0 · 19 de noviembre de 2026
+
+Un efecto nuevo para texto. Se elige encabezado por encabezado y viene sin
+poner, así que en las webs que ya usan Motion no cambia nada.
+
+- **Texto · Relleno de izquierda a derecha.** Al pasar el cursor por un
+  encabezado con enlace, el texto se rellena de color de izquierda a
+  derecha y se vacía al salir. Está pensado para los enlaces de un menú.
+  Se elige en Elementor: **Estilo → Caracool Motion → Al pasar el cursor**.
+- **Color y velocidad.** El color del relleno se elige entre los globales
+  del Kit; vacío, es el de Énfasis. El de reposo es el que el encabezado
+  ya tiene. La velocidad puede ser lenta, media o rápida.
+- **Solo en encabezados con enlace.** El relleno se mide sobre la caja del
+  enlace, que tiene el ancho del texto. Un encabezado sin enlace ocupa
+  todo el ancho del contenedor y el relleno no iría al ritmo de la palabra.
+- **Sin JavaScript.** Es un degradado recortado con la forma de las letras
+  que se desplaza con una transición. La hoja `cm-texto.css` pesa unos
+  2 KB y solo se carga en las páginas con algún encabezado que lo use,
+  también si está en la cabecera, el pie o una ventana emergente.
+- **Accesibilidad.** El relleno responde también al foco del teclado. Con
+  el movimiento reducido el color cambia sin recorrido. Con alto contraste
+  y al imprimir el texto se ve normal. En un navegador sin
+  `background-clip: text` el encabezado se queda como estaba.
+- El panel de Caracool Motion tiene una pestaña nueva, **Texto**, que lo
+  explica. No guarda ningún ajuste de sitio.
+
+Y un arreglo en las entradas.
+
+- **La entrada escalonada ya no da un salto.** Con el marcado optimizado
+  de Elementor, el widget lleva una transición de CSS sobre `transform`
+  (0,4 s) que antes iba en un envoltorio interior. Motion mueve ese mismo
+  `transform` y la transición lo seguía con retraso: la pieza se veía ya
+  entera cuando aún le quedaban unos quince píxeles por subir. Ahora las
+  piezas entran sin esa transición y la recuperan al terminar. Vale para
+  «Entrada escalonada» y para el contenido de «La foto crece».
+- En las webs con el marcado anterior no cambia nada: ahí el widget no
+  llevaba esa transición.
+
 ## 0.10.6 · 18 de noviembre de 2026
 
 Un ajuste nuevo en la cabecera. Viene apagado, así que en las webs que ya

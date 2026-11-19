@@ -2,7 +2,7 @@
 
 Movimiento para webs hechas con Elementor: scroll con inercia y transiciones de sección que se eligen **desde el propio panel de Elementor**, sin escribir código, sin CSS suelto en los bloques y sin depender de servicios externos.
 
-**Versión actual:** 0.9.1 · **Requiere:** WordPress 6.0+, Elementor 3.16+ (contenedores flexbox)
+**Versión actual:** 0.12.0 · **Requiere:** WordPress 6.0+, Elementor 3.16+ (contenedores flexbox)
 
 ---
 
@@ -59,6 +59,45 @@ La banda lleva su propia copia del contenido del botón, fondo y texto recortado
 | **Sigue al cursor** | Entra por donde llegas y sale por donde te vas. Para un botón grande y solo. |
 
 Cuesta una capa por botón y una transición de `clip-path`, que va en la GPU. Cero JavaScript por fotograma.
+
+### Texto · relleno al pasar
+
+Al pasar el cursor por un encabezado con enlace, el texto se rellena de color de izquierda a derecha y se vacía al salir. Se elige encabezado por encabezado: **Estilo → Caracool Motion → Al pasar el cursor → Relleno de izquierda a derecha**.
+
+| Ajuste | Qué hace |
+|---|---|
+| **Color del relleno** | Se elige entre los globales del Kit. Vacío, el de Énfasis. El color de reposo es el que el encabezado ya tiene. |
+| **Velocidad** | Lenta (0,7 s), media (0,45 s) o rápida (0,3 s). |
+
+- Solo actúa en encabezados con enlace: el relleno se mide sobre la caja del enlace, que tiene el ancho del texto.
+- El color al pasar del propio encabezado (Estilo → Título) tiene que estar vacío, o los dos cambios se pisan.
+- No lleva JavaScript. `cm-texto.css` (unos 2 KB) solo se carga en las páginas con algún encabezado que lo use, también si está en la cabecera, el pie o una ventana emergente.
+- Responde al foco del teclado. Con el movimiento reducido cambia de color sin recorrido; con alto contraste y al imprimir, el texto se ve normal.
+
+### Texto · entradas de titulares
+
+El titular entra línea a línea cuando llega a la pantalla. Se elige encabezado por encabezado: **Estilo → Caracool Motion → Al entrar en pantalla**.
+
+| Entrada | Qué hace |
+|---|---|
+| **Por líneas** | Cada línea sale desde debajo de una máscara, una detrás de otra. Sin fundido. |
+| **Cortina de color** | Una banda de color cruza cada línea de izquierda a derecha y deja el texto puesto. |
+| **Relleno de izquierda a derecha** | El titular está desde el principio, apagado, y cada línea se llena de izquierda a derecha. |
+
+| Ajuste | Qué hace |
+|---|---|
+| **Color de la cortina** | Solo con la cortina. Se elige entre los globales del Kit. Vacío, el de Énfasis. Sobre un fondo de ese mismo color hay que elegir otro. |
+| **Velocidad de la entrada** | Lenta, media o rápida, con los mismos multiplicadores que los efectos de sección. |
+
+- Dentro de un contenedor con «Entrada escalonada», el titular entra en su turno y las piezas de detrás esperan a que termine (tope de 1,2 s). Fuera de uno, entra solo al llegar a él.
+- Dentro de una cortina lateral o de «La foto crece» no se anima. En una ventana emergente tampoco.
+- El titular se parte en líneas en el navegador y solo mientras dura la entrada. Al terminar vuelve a su HTML original, con sus enlaces. Se parte justo antes de animar, así que un cambio de ancho o una tipografía que llega tarde no lo descolocan.
+- Respeta los saltos de línea puestos a mano, los espacios duros y las etiquetas de dentro.
+- Se ve en la página publicada, no en el editor de Elementor.
+- Mientras espera, el titular se esconde con opacidad y sigue al alcance del teclado y de los lectores de pantalla. Con el movimiento reducido no hay entrada.
+- `cm-titular.js` (unos 10 KB) y `cm-titular.css` (unos 5 KB) solo se cargan en las páginas con algún encabezado que lo use. Los encola el módulo Scroll como dependencia de su script; no piden ScrollTrigger ni Lenis.
+
+Reparto: `cm-titular.js` sabe partir y animar un titular y se ofrece en `window.CaracoolMotionTitular` (`es`, `esperar`, `entrar`, `mostrar`). Cuándo entra lo decide `cm-scroll.js`. Para añadir una entrada nueva: una clave en `Caracool_Motion_Texto::entradas()`, la misma en `EFECTOS`, `RITMO` y `ANIMAR` de `cm-titular.js`, y sus reglas en `cm-titular.css`.
 
 ### Fondo vivo
 
@@ -213,6 +252,7 @@ caracool-motion/
 ├── modules/
 │   ├── cm-scroll.php        Módulo de scroll y transiciones de sección
 │   ├── cm-botones.php       Módulo de botones
+│   ├── cm-texto.php         Módulo de texto: relleno al pasar y entradas de titulares
 │   ├── cm-cabecera.php      Módulo de cabecera
 │   ├── cm-intro.php         Módulo de intro
 │   ├── cm-fondo.php         Módulo de fondo vivo
@@ -222,6 +262,9 @@ caracool-motion/
     ├── cm-scroll.js         Registro de efectos y motor
     ├── cm-botones.css       Solo estructura
     ├── cm-botones.js        Lee los colores del botón y barre
+    ├── cm-texto.css         Relleno de izquierda a derecha en encabezados con enlace
+    ├── cm-titular.css       Cajas de línea, máscara, banda y relleno de las entradas
+    ├── cm-titular.js        Parte el titular en líneas y lo anima
     ├── cm-cabecera.css      Estados de la cabecera
     ├── cm-cabecera.js       Dirección del scroll y estados
     ├── cm-intro.js          Piezas del logotipo, animación y salida
@@ -248,5 +291,4 @@ El plugin comprueba las *releases* del repositorio y avisa en Plugins → Actual
 
 ## Módulos previstos
 
-- **Animaciones de texto** — efectos de entrada y de hover en titulares y CTAs, elegidos widget a widget.
 - **Cursor personalizado** — cursor propio con física de muelle e imán en los enlaces.
