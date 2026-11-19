@@ -474,13 +474,18 @@ class Caracool_Motion_Scroll {
 	 * página lleva efectos. Sin bloques con entrada, la regla no pinta nada.
 	 * La quita el JS en cuanto ha colocado cada pieza; si no llegara a
 	 * arrancar, se quita sola a los dos segundos.
+	 *
+	 * Los encabezados con entrada propia (módulo Texto) van en la misma
+	 * guarda: por líneas y con cortina no se ven hasta que entran; con
+	 * relleno están desde el principio, apagados. El 0,3 es el mismo apagado
+	 * que usa `cm-titular.css`.
 	 */
 	public function imprimir_guarda() {
 		if ( self::editor_elementor() ) {
 			return;
 		}
 		?>
-<style id="cm-guarda">html.cm-entrando [data-cm-efecto="entrada"] .elementor-widget{visibility:hidden}</style>
+<style id="cm-guarda">html.cm-entrando [data-cm-efecto="entrada"] .elementor-widget,html.cm-entrando .cm-titular-lineas,html.cm-entrando .cm-titular-cortina{visibility:hidden}html.cm-entrando .cm-titular-relleno .elementor-heading-title{opacity:.3}</style>
 <script id="cm-guarda-js">(function(h){if(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches){return;}h.className+=" cm-entrando";setTimeout(function(){h.classList.remove("cm-entrando");},2000);}(document.documentElement));</script>
 		<?php
 	}
@@ -499,7 +504,11 @@ class Caracool_Motion_Scroll {
 		$pagina  = self::efectos_de_la_pagina();
 		$efectos = $pagina['efectos'];
 
-		if ( ! $efectos && ! $pagina['dudoso'] && ! $hay_motor ) {
+		// Un encabezado con entrada propia (módulo Texto) también necesita
+		// este script: es quien vigila la pantalla y le da paso.
+		$hay_titular = class_exists( 'Caracool_Motion_Texto' ) && Caracool_Motion_Texto::pagina_usa_titular();
+
+		if ( ! $efectos && ! $pagina['dudoso'] && ! $hay_motor && ! $hay_titular ) {
 			return;
 		}
 
@@ -512,6 +521,7 @@ class Caracool_Motion_Scroll {
 		 *   los más usados, van por IntersectionObserver y no lo necesitan: una
 		 *   página que solo lleve esos dos se ahorra 43 KB.
 		 * - Lenis solo si la inercia está activada.
+		 * - `cm-titular.js` solo si algún encabezado lleva entrada propia.
 		 *
 		 * Un efecto añadido por el filtro que no declare la marca cuenta como
 		 * de scroll: más vale cargar de más que romperlo.
@@ -533,6 +543,12 @@ class Caracool_Motion_Scroll {
 		}
 		if ( 'si' === $conf['inercia'] ) {
 			$deps[] = 'cm-lenis';
+		}
+		// Las entradas de titulares van en su propio archivo, que tiene que
+		// estar cargado antes: solo viaja si la página las usa.
+		if ( $hay_titular ) {
+			$deps[] = 'cm-titular';
+			wp_enqueue_style( 'cm-titular' );
 		}
 
 		$scripts = wp_scripts();
